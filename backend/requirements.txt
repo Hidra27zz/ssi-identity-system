@@ -1,0 +1,14 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+web3==6.19.0
+cryptography==42.0.8
+python-multipart==0.0.9
+python-dotenv==1.0.1
+httpx==0.27.0
+hypothesis==6.103.1
+pytest==8.2.2
+pytest-asyncio==0.23.7
+requests==2.32.3
+eth-ape>=0.8.0
+ape-vyper>=0.8.0
+ape-etherscan>=0.8.0

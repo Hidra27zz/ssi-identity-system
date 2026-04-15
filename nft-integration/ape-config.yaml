@@ -1,0 +1,11 @@
+name: ssi-nft
+
+contracts_folder: .
+
+plugins:
+  - name: vyper
+
+networks:
+  ethereum:
+    local:
+      default_provider: http

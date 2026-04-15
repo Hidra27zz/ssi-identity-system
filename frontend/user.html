@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSI - Identity User</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Identity User Dashboard</h1>
+
+        <div class="card">
+            <h2>Tao cap khoa RSA</h2>
+            <input type="text" id="walletAddress" placeholder="Dia chi vi 0x..." />
+            <button onclick="generateKeypair()">Tao Keypair</button>
+            <div id="keypairResult" class="hidden">
+                <label>Public Key (da luu)</label>
+                <textarea id="publicKeyDisplay" rows="4" readonly></textarea>
+                <label>Private Key (luu o noi an toan - he thong khong luu)</label>
+                <textarea id="privateKeyDisplay" rows="4" readonly></textarea>
+                <button onclick="downloadPrivateKey()">Tai Private Key</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Thong tin DID</h2>
+            <input type="text" id="checkAddress" placeholder="Dia chi vi 0x..." />
+            <button onclick="loadDIDInfo()">Xem Thong Tin</button>
+            <div id="didInfo" class="hidden">
+                <p>DID: <span id="didValue"></span></p>
+                <p>Trang thai: <span id="didStatus"></span></p>
+                <p>IPFS CID: <span id="didCid"></span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Soulbound Token</h2>
+            <input type="text" id="nftAddress" placeholder="Dia chi vi 0x..." />
+            <button onclick="checkNFT()">Kiem Tra Token</button>
+            <div id="nftInfo" class="hidden">
+                <p>Co token hop le: <span id="hasToken"></span></p>
+                <p>Token ID: <span id="tokenId"></span></p>
+                <p>Metadata URI: <span id="metadataUri"></span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Yeu cau chia se du lieu dang cho</h2>
+            <input type="text" id="consentDid" placeholder="DID cua ban..." />
+            <button onclick="loadPendingConsents()">Tai Danh Sach</button>
+            <div id="consentList"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/user.js"></script>
+</body>
+</html>

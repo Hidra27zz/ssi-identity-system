@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["backend/tests", "contracts/tests", "nft-integration/tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.ape]
+# Ape doc config tu ape-config.yaml
+
+[project]
+name = "ssi-project"
+version = "0.1.0"
+requires-python = ">=3.11"

@@ -1,0 +1,22 @@
+name: ssi-project
+
+contracts_folder: contracts
+
+plugins:
+  - name: vyper
+  - name: etherscan
+
+default_ecosystem: ethereum
+
+networks:
+  ethereum:
+    local:
+      default_provider: http
+    sepolia:
+      default_provider: infura
+
+deployments:
+  ethereum:
+    local:
+      - contract_type: DID_Registry
+      - contract_type: Soulbound_Contract

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSI - Identity Creator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Identity Creator Dashboard</h1>
+        <p class="subtitle">Xac minh tai lieu va luu hash len blockchain</p>
+
+        <div class="card">
+            <h2>Buoc 1: Nhap thong tin nguoi dung</h2>
+            <label>Dia chi vi nguoi dung</label>
+            <input type="text" id="userAddress" placeholder="0x..." />
+
+            <label>DID cua nguoi dung</label>
+            <input type="text" id="userDid" placeholder="did:ssi:..." />
+        </div>
+
+        <div class="card">
+            <h2>Buoc 2: Upload tai lieu len IPFS</h2>
+
+            <label>Anh chan dung (JPG/PNG, toi da 5MB)</label>
+            <input type="file" id="portraitFile" accept="image/jpeg,image/png" />
+            <button onclick="uploadFile('portrait')">Upload Anh</button>
+            <p id="portraitCid" class="cid-display"></p>
+
+            <label>File PDF can cuoc (toi da 10MB)</label>
+            <input type="file" id="documentFile" accept="application/pdf" />
+            <button onclick="uploadFile('document')">Upload PDF</button>
+            <p id="documentCid" class="cid-display"></p>
+        </div>
+
+        <div class="card">
+            <h2>Buoc 3: Gui hash len Smart Contract</h2>
+            <label>Document Hash (tu dong dien sau khi upload)</label>
+            <input type="text" id="docHash" placeholder="SHA-256 hex..." readonly />
+
+            <label>IPFS CID</label>
+            <input type="text" id="ipfsCid" placeholder="Qm..." readonly />
+
+            <label>Dia chi Creator (cua ban)</label>
+            <input type="text" id="creatorAddress" placeholder="0x..." />
+
+            <button onclick="storeHash()" class="btn-primary">Gui Hash len Blockchain</button>
+        </div>
+
+        <div id="txStatus" class="status-box hidden"></div>
+    </div>
+
+    <script type="module" src="js/creator.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSI - Identity Verifier</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Identity Verifier Dashboard</h1>
+        <p class="subtitle">Kiem tra tinh hop le cua dinh danh</p>
+
+        <div class="card">
+            <h2>Xac minh DID</h2>
+            <label>Dia chi vi can kiem tra</label>
+            <input type="text" id="verifyAddress" placeholder="0x..." />
+            <button onclick="verifyDID()" class="btn-primary">Xac Minh</button>
+        </div>
+
+        <div id="verifyResult" class="hidden">
+            <div class="card">
+                <h2>Ket qua xac minh</h2>
+                <p>Dia chi: <span id="resultAddress"></span></p>
+                <p>Trang thai: <span id="resultStatus" class="status-badge"></span></p>
+                <p>DID: <span id="resultDid"></span></p>
+                <p>IPFS CID: <span id="resultCid"></span></p>
+                <p>Thoi gian kiem tra: <span id="resultTime"></span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Yeu cau truy cap du lieu</h2>
+            <label>DID cua chu so huu</label>
+            <input type="text" id="ownerDid" placeholder="did:ssi:..." />
+            <label>Loai du lieu</label>
+            <select id="dataType">
+                <option value="portrait">Anh chan dung</option>
+                <option value="document">Tai lieu PDF</option>
+                <option value="metadata">Metadata JSON</option>
+            </select>
+            <button onclick="requestConsent()">Gui Yeu Cau Truy Cap</button>
+            <p id="consentResult"></p>
+        </div>
+    </div>
+
+    <script type="module" src="js/verifier.js"></script>
+</body>
+</html>
