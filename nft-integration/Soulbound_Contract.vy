@@ -31,7 +31,7 @@ token_counter: uint256
 authorized_minters: HashMap[address, bool]
 contract_owner: address
 
-@deploy
+@external
 def __init__():
     self.contract_owner = msg.sender
     self.authorized_minters[msg.sender] = True

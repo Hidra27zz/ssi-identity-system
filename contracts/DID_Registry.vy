@@ -106,7 +106,7 @@ total_verified: uint256                      # Tong so DID da xac minh
 # CONSTRUCTOR
 # ============================================================
 
-@deploy
+@external
 def __init__():
     self.contract_owner = msg.sender
     self.creators[msg.sender] = True
@@ -135,18 +135,16 @@ def createDID(did: String[128]) -> bool:
     assert not self.has_did[msg.sender], "DID already exists for this address"
     assert len(did) > 0, "DID string cannot be empty"
 
-    self.records[msg.sender] = DIDRecord(
-        owner=msg.sender,
-        did=did,
-        doc_hash=empty(bytes32),
-        ipfs_cid="",
-        status=STATUS_PENDING,
-        created_at=block.timestamp,
-        verified_at=0,
-        updated_at=0,
-        verified_by=empty(address),
-        update_count=0
-    )
+    self.records[msg.sender].owner        = msg.sender
+    self.records[msg.sender].did          = did
+    self.records[msg.sender].doc_hash     = empty(bytes32)
+    self.records[msg.sender].ipfs_cid     = ""
+    self.records[msg.sender].status       = STATUS_PENDING
+    self.records[msg.sender].created_at   = block.timestamp
+    self.records[msg.sender].verified_at  = 0
+    self.records[msg.sender].updated_at   = 0
+    self.records[msg.sender].verified_by  = empty(address)
+    self.records[msg.sender].update_count = 0
     self.has_did[msg.sender] = True
     self.total_dids += 1
 
