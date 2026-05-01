@@ -47,7 +47,7 @@ def _load_abi(filename: str) -> list:
         raise FileNotFoundError(
             f"ABI chua co: {path}. Hay deploy contract truoc: ape run contracts/deploy"
         )
-    with open(path) as f:
+    with open(path, encoding='utf-8-sig') as f:
         return json.load(f)
 
 
