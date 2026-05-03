@@ -1,6 +1,7 @@
 // Dia chi contract (cap nhat sau khi deploy)
-export const DID_REGISTRY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-export const SOULBOUND_ADDRESS = "0x0000000000000000000000000000000000000000";
+export const DID_REGISTRY_ADDRESS =
+  "0x4442864E86805E1c5C8759ED1047Ef4802Ce15Ee";
+export const SOULBOUND_ADDRESS = "0xD3B88E485c8Ad25FeCeF28f9eb0DD7f7e73EdC2D";
 
 // Backend API
 export const BACKEND_URL = "http://localhost:8000";
