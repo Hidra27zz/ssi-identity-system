@@ -3,21 +3,9 @@
     "type": "event",
     "name": "DIDCreated",
     "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "did",
-        "type": "string",
-        "indexed": false
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "indexed": false
-      }
+      { "name": "owner", "type": "address", "indexed": true },
+      { "name": "did", "type": "string", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
     ],
     "anonymous": false
   },
@@ -25,31 +13,11 @@
     "type": "event",
     "name": "DocumentHashStored",
     "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "doc_hash",
-        "type": "bytes32",
-        "indexed": false
-      },
-      {
-        "name": "cid",
-        "type": "string",
-        "indexed": false
-      },
-      {
-        "name": "verified_by",
-        "type": "address",
-        "indexed": false
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "indexed": false
-      }
+      { "name": "owner", "type": "address", "indexed": true },
+      { "name": "doc_hash", "type": "bytes32", "indexed": false },
+      { "name": "cid", "type": "string", "indexed": false },
+      { "name": "verified_by", "type": "address", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
     ],
     "anonymous": false
   },
@@ -57,36 +25,12 @@
     "type": "event",
     "name": "DocumentHashUpdated",
     "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "old_hash",
-        "type": "bytes32",
-        "indexed": false
-      },
-      {
-        "name": "new_hash",
-        "type": "bytes32",
-        "indexed": false
-      },
-      {
-        "name": "new_cid",
-        "type": "string",
-        "indexed": false
-      },
-      {
-        "name": "updated_by",
-        "type": "address",
-        "indexed": false
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "indexed": false
-      }
+      { "name": "owner", "type": "address", "indexed": true },
+      { "name": "old_hash", "type": "bytes32", "indexed": false },
+      { "name": "new_hash", "type": "bytes32", "indexed": false },
+      { "name": "new_cid", "type": "string", "indexed": false },
+      { "name": "updated_by", "type": "address", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
     ],
     "anonymous": false
   },
@@ -94,26 +38,10 @@
     "type": "event",
     "name": "DIDRevoked",
     "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "did",
-        "type": "string",
-        "indexed": false
-      },
-      {
-        "name": "revoked_by",
-        "type": "address",
-        "indexed": false
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "indexed": false
-      }
+      { "name": "owner", "type": "address", "indexed": true },
+      { "name": "did", "type": "string", "indexed": false },
+      { "name": "revoked_by", "type": "address", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
     ],
     "anonymous": false
   },
@@ -121,16 +49,8 @@
     "type": "event",
     "name": "CreatorRoleGranted",
     "inputs": [
-      {
-        "name": "creator",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "granted_by",
-        "type": "address",
-        "indexed": false
-      }
+      { "name": "creator", "type": "address", "indexed": true },
+      { "name": "granted_by", "type": "address", "indexed": false }
     ],
     "anonymous": false
   },
@@ -138,16 +58,8 @@
     "type": "event",
     "name": "CreatorRoleRevoked",
     "inputs": [
-      {
-        "name": "creator",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "revoked_by",
-        "type": "address",
-        "indexed": false
-      }
+      { "name": "creator", "type": "address", "indexed": true },
+      { "name": "revoked_by", "type": "address", "indexed": false }
     ],
     "anonymous": false
   },
@@ -155,16 +67,8 @@
     "type": "event",
     "name": "OwnershipTransferred",
     "inputs": [
-      {
-        "name": "old_owner",
-        "type": "address",
-        "indexed": true
-      },
-      {
-        "name": "new_owner",
-        "type": "address",
-        "indexed": true
-      }
+      { "name": "old_owner", "type": "address", "indexed": true },
+      { "name": "new_owner", "type": "address", "indexed": true }
     ],
     "anonymous": false
   },
@@ -178,16 +82,10 @@
     "name": "createDID",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "did",
-        "type": "string"
-      }
+      { "name": "did", "type": "string" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -195,24 +93,12 @@
     "name": "storeDocumentHash",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      },
-      {
-        "name": "doc_hash",
-        "type": "bytes32"
-      },
-      {
-        "name": "cid",
-        "type": "string"
-      }
+      { "name": "target_address", "type": "address" },
+      { "name": "doc_hash", "type": "bytes32" },
+      { "name": "cid", "type": "string" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -220,24 +106,12 @@
     "name": "updateDocumentHash",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      },
-      {
-        "name": "new_hash",
-        "type": "bytes32"
-      },
-      {
-        "name": "new_cid",
-        "type": "string"
-      }
+      { "name": "target_address", "type": "address" },
+      { "name": "new_hash", "type": "bytes32" },
+      { "name": "new_cid", "type": "string" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -245,16 +119,10 @@
     "name": "revokeDID",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -262,16 +130,10 @@
     "name": "verifyDID",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -279,16 +141,10 @@
     "name": "getDIDStatus",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "uint8"
-      }
+      { "name": "", "type": "uint8" }
     ]
   },
   {
@@ -296,56 +152,23 @@
     "name": "getDIDRecord",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
       {
         "name": "",
         "type": "tuple",
         "components": [
-          {
-            "name": "owner",
-            "type": "address"
-          },
-          {
-            "name": "did",
-            "type": "string"
-          },
-          {
-            "name": "doc_hash",
-            "type": "bytes32"
-          },
-          {
-            "name": "ipfs_cid",
-            "type": "string"
-          },
-          {
-            "name": "status",
-            "type": "uint8"
-          },
-          {
-            "name": "created_at",
-            "type": "uint256"
-          },
-          {
-            "name": "verified_at",
-            "type": "uint256"
-          },
-          {
-            "name": "updated_at",
-            "type": "uint256"
-          },
-          {
-            "name": "verified_by",
-            "type": "address"
-          },
-          {
-            "name": "update_count",
-            "type": "uint8"
-          }
+          { "name": "owner", "type": "address" },
+          { "name": "did", "type": "string" },
+          { "name": "doc_hash", "type": "bytes32" },
+          { "name": "ipfs_cid", "type": "string" },
+          { "name": "status", "type": "uint8" },
+          { "name": "created_at", "type": "uint256" },
+          { "name": "verified_at", "type": "uint256" },
+          { "name": "updated_at", "type": "uint256" },
+          { "name": "verified_by", "type": "address" },
+          { "name": "update_count", "type": "uint8" }
         ]
       }
     ]
@@ -355,16 +178,10 @@
     "name": "getDocumentHash",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
+      { "name": "", "type": "bytes32" }
     ]
   },
   {
@@ -372,16 +189,10 @@
     "name": "getIPFSCid",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "target_address",
-        "type": "address"
-      }
+      { "name": "target_address", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
+      { "name": "", "type": "string" }
     ]
   },
   {
@@ -389,16 +200,10 @@
     "name": "isCreator",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "addr",
-        "type": "address"
-      }
+      { "name": "addr", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -406,16 +211,10 @@
     "name": "hasDID",
     "stateMutability": "view",
     "inputs": [
-      {
-        "name": "addr",
-        "type": "address"
-      }
+      { "name": "addr", "type": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
+      { "name": "", "type": "bool" }
     ]
   },
   {
@@ -424,14 +223,8 @@
     "stateMutability": "view",
     "inputs": [],
     "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
+      { "name": "", "type": "uint256" },
+      { "name": "", "type": "uint256" }
     ]
   },
   {
@@ -440,10 +233,7 @@
     "stateMutability": "view",
     "inputs": [],
     "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
+      { "name": "", "type": "address" }
     ]
   },
   {
@@ -451,10 +241,7 @@
     "name": "grantCreatorRole",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "creator_address",
-        "type": "address"
-      }
+      { "name": "creator_address", "type": "address" }
     ],
     "outputs": []
   },
@@ -463,10 +250,7 @@
     "name": "revokeCreatorRole",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "creator_address",
-        "type": "address"
-      }
+      { "name": "creator_address", "type": "address" }
     ],
     "outputs": []
   },
@@ -475,10 +259,7 @@
     "name": "transferOwnership",
     "stateMutability": "nonpayable",
     "inputs": [
-      {
-        "name": "new_owner",
-        "type": "address"
-      }
+      { "name": "new_owner", "type": "address" }
     ],
     "outputs": []
   }

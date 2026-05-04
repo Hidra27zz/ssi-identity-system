@@ -1,8 +1,8 @@
 #!/bin/bash
-# Deploy ca 2 contracts len local node va cap nhat constants
-# Chay: bash scripts/deploy_all.sh
+# Deploy cả 2 contracts lên local node và cập nhật constants
+# Chạy: bash scripts/deploy_all.sh
 #
-# Yeu cau: anvil dang chay o port 8545
+# Yêu cầu: anvil đang chạy ở port 8545
 
 set -e
 
@@ -18,11 +18,11 @@ echo "=== Deploy Soulbound_Contract ==="
 ape run nft-integration/deploy --network $NETWORK
 
 echo ""
-echo "=== ABI da duoc export vao shared/abis/ ==="
+echo "=== ABI đã được export vào shared/abis/ ==="
 ls -la shared/abis/
 
 echo ""
-echo "Hay cap nhat DID_REGISTRY_ADDRESS va SOULBOUND_ADDRESS trong:"
+echo "Hãy cập nhật DID_REGISTRY_ADDRESS và SOULBOUND_ADDRESS trong:"
 echo "  - .env"
-echo "  - shared/constants.py"
+echo "  - shared/constants.py  (CHAIN_ID = CHAIN_ID_LOCAL nếu chạy local)"
 echo "  - shared/constants.js"

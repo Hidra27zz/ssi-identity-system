@@ -85,10 +85,28 @@ def respond_consent(body: ConsentRespondBody):
 
 @router.get("/pending/{did}")
 def get_pending_consents(did: str):
+    """Lay danh sach consent dang cho phan hoi cua owner."""
     conn = get_connection()
     try:
         rows = conn.execute(
             "SELECT * FROM consent_records WHERE owner_did=? AND status='pending' ORDER BY requested_at DESC",
+            (did,),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [dict(r) for r in rows]
+
+
+@router.get("/history/{did}")
+def get_consent_history(did: str):
+    """
+    Lay lich su tat ca consent cua owner (pending + approved + rejected).
+    Phuc hop cho User Dashboard va Verifier xem lai lich su.
+    """
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM consent_records WHERE owner_did=? ORDER BY requested_at DESC",
             (did,),
         ).fetchall()
     finally:

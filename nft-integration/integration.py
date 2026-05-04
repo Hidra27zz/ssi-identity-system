@@ -31,8 +31,8 @@ POLL_INTERVAL  = 5
 # =========================
 # VALIDATION
 # =========================
-assert PRIVATE_KEY, "❌ PRIVATE_KEY not set in .env"
-assert SOULBOUND_ADDRESS != "0x0000000000000000000000000000000000000000", "❌ Soulbound not deployed"
+assert PRIVATE_KEY, "PRIVATE_KEY not set in .env"
+assert SOULBOUND_ADDRESS != "0x0000000000000000000000000000000000000000", "Soulbound not deployed"
 
 
 # =========================
@@ -40,7 +40,7 @@ assert SOULBOUND_ADDRESS != "0x0000000000000000000000000000000000000000", "❌ S
 # =========================
 def get_w3() -> Web3:
     w3 = Web3(Web3.HTTPProvider(RPC_URL))
-    assert w3.is_connected(), f"❌ Cannot connect RPC: {RPC_URL}"
+    assert w3.is_connected(), f"Cannot connect to RPC: {RPC_URL}"
     return w3
 
 
@@ -48,7 +48,7 @@ def load_contract(w3: Web3, abi_file: str, address: str):
     abi_path = SHARED_ABIS / abi_file
 
     if not abi_path.exists():
-        raise FileNotFoundError(f"❌ ABI not found: {abi_path}")
+        raise FileNotFoundError(f"ABI not found: {abi_path}")
 
     with open(abi_path) as f:
         abi = json.load(f)

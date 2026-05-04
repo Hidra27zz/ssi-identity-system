@@ -37,6 +37,12 @@ class UploadResponse(BaseModel):
     doc_hash: str
 
 
+class RetrieveRequest(BaseModel):
+    private_key: str
+    owner_did: str
+    requester_address: str
+
+
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile,
@@ -106,14 +112,21 @@ async def upload_metadata(
     return {"cid": cid, "metadata": metadata}
 
 
-@router.get("/retrieve/{cid}")
-async def retrieve_file(cid: str, private_key: str, owner_did: str, requester_address: str):
+@router.post("/retrieve/{cid}")
+async def retrieve_file(cid: str, body: RetrieveRequest):
+    """
+    Tai va giai ma file tu IPFS.
+    Yeu cau consent da duoc approved va chua het han.
+    private_key truyen qua request body, khong qua URL.
+    """
     # Kiem tra consent
     conn = get_connection()
     try:
         row = conn.execute(
-            "SELECT status FROM consent_records WHERE owner_did=? AND requester_address=? AND data_type IS NOT NULL ORDER BY id DESC LIMIT 1",
-            (owner_did, requester_address),
+            """SELECT status, expires_at FROM consent_records
+               WHERE owner_did=? AND requester_address=? AND data_type IS NOT NULL
+               ORDER BY id DESC LIMIT 1""",
+            (body.owner_did, body.requester_address),
         ).fetchone()
     finally:
         conn.close()
@@ -121,13 +134,19 @@ async def retrieve_file(cid: str, private_key: str, owner_did: str, requester_ad
     if not row or row["status"] != "approved":
         raise HTTPException(status_code=403, detail="Access denied: no consent from owner")
 
+    # Kiem tra consent het han
+    if row["expires_at"]:
+        expires = datetime.fromisoformat(row["expires_at"])
+        if datetime.now(timezone.utc) > expires:
+            raise HTTPException(status_code=403, detail="Access denied: consent da het han")
+
     try:
         encrypted_bytes = await retrieve_from_ipfs(cid)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"IPFS retrieve failed: {e}")
 
     try:
-        file_bytes = decrypt_file(encrypted_bytes, private_key)
+        file_bytes = decrypt_file(encrypted_bytes, body.private_key)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 

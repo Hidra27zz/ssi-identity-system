@@ -59,8 +59,9 @@ def test_hash_document_different_for_different_content():
 # --- Property-based tests ---
 
 # Feature: decentralized-identity-ssi, Property 16: RSA Keypair Generation Round-Trip
+# deadline=None vi RSA key generation mat ~200-500ms, vuot deadline mac dinh cua Hypothesis
 @given(data=st.binary(min_size=1, max_size=2048))
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=None)
 def test_property_encrypt_decrypt_roundtrip(data):
     pub, priv = generate_rsa_keypair()
     encrypted = encrypt_file(data, pub)
@@ -69,8 +70,9 @@ def test_property_encrypt_decrypt_roundtrip(data):
 
 
 # Feature: decentralized-identity-ssi, Property 17: Sai Private Key - Decrypt That Bai
+# deadline=None vi RSA key generation mat ~200-500ms, vuot deadline mac dinh cua Hypothesis
 @given(data=st.binary(min_size=1, max_size=512))
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=None)
 def test_property_wrong_key_fails(data):
     pub, _ = generate_rsa_keypair()
     _, wrong_priv = generate_rsa_keypair()

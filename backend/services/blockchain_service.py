@@ -68,7 +68,11 @@ def _get_soulbound_contract(w3: Web3):
 
 
 def _send_tx(w3: Web3, fn) -> str:
-    """Ky va gui giao dich, tra ve tx_hash hex."""
+    """
+    Ky, gui giao dich va cho receipt xac nhan.
+    Raise ValueError neu transaction bi revert on-chain.
+    Tra ve tx_hash hex.
+    """
     account = w3.eth.account.from_key(PRIVATE_KEY)
     nonce = w3.eth.get_transaction_count(account.address, "pending")
     tx = fn.build_transaction({
@@ -79,6 +83,12 @@ def _send_tx(w3: Web3, fn) -> str:
     })
     signed = account.sign_transaction(tx)
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+
+    # Cho receipt de biet tx co thanh cong khong (timeout 120s)
+    receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+    if receipt.status == 0:
+        raise ValueError(f"Transaction reverted on-chain. tx={tx_hash.hex()}")
+
     return tx_hash.hex()
 
 
@@ -151,8 +161,9 @@ def update_hash_on_chain(wallet_address: str, new_hash: str, new_cid: str) -> st
 
 def verify_did_on_chain(wallet_address: str) -> dict:
     """
-    Goi verifyDID() va getDIDRecord() de lay trang thai day du.
-    Tra ve dict voi cac truong: is_valid, did, ipfs_cid, status, status_label, verified_by.
+    Goi verifyDID() va getDIDStatus() de kiem tra nhanh tinh hop le.
+    Dung cho endpoint GET /verify/{address}.
+    Tra ve dict: is_valid, did, ipfs_cid, status, verified_by, update_count.
     """
     w3 = get_web3()
     contract = _get_did_contract(w3)
@@ -177,6 +188,41 @@ def verify_did_on_chain(wallet_address: str) -> dict:
         "status":       STATUS_LABELS.get(status_code, "unknown"),
         "verified_by":  verified_by or None,
         "update_count": update_count,
+    }
+
+
+def get_did_record_full(wallet_address: str) -> dict:
+    """
+    Lay day du thong tin DID Record tu blockchain.
+    Dung cho endpoint GET /record/{address}.
+    Tra ve tat ca cac truong trong struct DIDRecord bao gom created_at, verified_at, updated_at.
+    """
+    w3 = get_web3()
+    contract = _get_did_contract(w3)
+    addr = Web3.to_checksum_address(wallet_address)
+
+    is_valid = contract.functions.verifyDID(addr).call()
+    status_code = contract.functions.getDIDStatus(addr).call()
+    record = contract.functions.getDIDRecord(addr).call()
+
+    # record tuple: (owner, did, doc_hash, ipfs_cid, status, created_at, verified_at, updated_at, verified_by, update_count)
+    doc_hash_bytes = record[2] if record else b"\x00" * 32
+    doc_hash_hex   = doc_hash_bytes.hex() if doc_hash_bytes != b"\x00" * 32 else None
+
+    return {
+        "address":      wallet_address,
+        "is_valid":     is_valid,
+        "owner":        record[0] if record else None,
+        "did":          record[1] or None,
+        "doc_hash":     doc_hash_hex,
+        "ipfs_cid":     record[3] or None,
+        "status_code":  status_code,
+        "status":       STATUS_LABELS.get(status_code, "unknown"),
+        "created_at":   record[5] if record else 0,
+        "verified_at":  record[6] if record else 0,
+        "updated_at":   record[7] if record else 0,
+        "verified_by":  record[8] or None,
+        "update_count": record[9] if record else 0,
     }
 
 
@@ -228,9 +274,10 @@ def is_creator_on_chain(address: str) -> bool:
 # Soulbound Token functions
 # ============================================================
 
-def mint_soulbound_token(recipient: str, metadata_uri: str) -> str:
+def mint_soulbound_token(recipient: str, credential_type: str, metadata_uri: str) -> str:
     """
-    Goi Soulbound_Contract.mint().
+    Goi Soulbound_Contract.mint(recipient, credential_type, metadata_uri).
+    Contract moi yeu cau 3 tham so: recipient, credential_type, metadata_uri.
     Tra ve tx_hash.
     """
     w3 = get_web3()
@@ -238,6 +285,7 @@ def mint_soulbound_token(recipient: str, metadata_uri: str) -> str:
     try:
         fn = contract.functions.mint(
             Web3.to_checksum_address(recipient),
+            credential_type,
             metadata_uri,
         )
         return _send_tx(w3, fn)
@@ -248,33 +296,120 @@ def mint_soulbound_token(recipient: str, metadata_uri: str) -> str:
 def check_soulbound_token(address: str) -> dict:
     """
     Kiem tra trang thai Soulbound Token cua mot dia chi.
-    Tra ve dict: has_valid_token, token_id, metadata_uri.
+    Lay danh sach token_id cua owner, kiem tra hasValidToken.
+    Tra ve dict: has_valid_token, tokens (list token_id), token_count.
     """
     w3 = get_web3()
     contract = _get_soulbound_contract(w3)
     addr = Web3.to_checksum_address(address)
 
     has_token = contract.functions.hasValidToken(addr).call()
-    token_data = contract.functions.getTokenData(addr).call()
+    token_ids = contract.functions.getTokensOfOwner(addr).call()
 
     return {
         "has_valid_token": has_token,
-        "token_id":        token_data[1] if token_data and token_data[0] != "0x" + "0" * 40 else None,
-        "metadata_uri":    token_data[2] if token_data else None,
+        "tokens":          token_ids,
+        "token_count":     len(token_ids),
     }
 
 
-def invalidate_soulbound_token(owner_address: str) -> str:
+def get_soulbound_token_data(token_id: int) -> dict:
     """
-    Vo hieu hoa Soulbound Token khi DID bi revoke.
+    Lay thong tin chi tiet cua 1 token theo token_id.
+    Tra ve dict: owner, issuer, token_id, credential_type, metadata_uri, is_valid, minted_at.
+    """
+    w3 = get_web3()
+    contract = _get_soulbound_contract(w3)
+    try:
+        data = contract.functions.getTokenData(token_id).call()
+        # TokenData tuple: (owner, issuer, token_id, credential_type, metadata_uri, is_valid, minted_at)
+        return {
+            "owner":           data[0],
+            "issuer":          data[1],
+            "token_id":        data[2],
+            "credential_type": data[3],
+            "metadata_uri":    data[4],
+            "is_valid":        data[5],
+            "minted_at":       data[6],
+        }
+    except ContractLogicError as e:
+        raise ValueError(_parse_revert(e))
+
+
+def invalidate_soulbound_token(token_id: int) -> str:
+    """
+    Vo hieu hoa Soulbound Token theo token_id.
+    Contract moi dung token_id (uint256), khong phai owner address.
     Tra ve tx_hash.
     """
     w3 = get_web3()
     contract = _get_soulbound_contract(w3)
     try:
-        fn = contract.functions.invalidateToken(
-            Web3.to_checksum_address(owner_address)
-        )
+        fn = contract.functions.invalidateToken(token_id)
         return _send_tx(w3, fn)
     except ContractLogicError as e:
         raise ValueError(_parse_revert(e))
+
+
+def invalidate_all_tokens_of_owner(owner_address: str) -> list[str]:
+    """
+    Vo hieu hoa tat ca Soulbound Token con hieu luc cua mot dia chi.
+    Dung khi revoke DID de dam bao NFT cung bi invalidate.
+    Tra ve danh sach tx_hash da xu ly.
+    Loi tung token duoc log nhung khong lam fail toan bo ham.
+    """
+    w3 = get_web3()
+    contract = _get_soulbound_contract(w3)
+    addr = Web3.to_checksum_address(owner_address)
+
+    token_ids = contract.functions.getTokensOfOwner(addr).call()
+    tx_hashes = []
+
+    for token_id in token_ids:
+        try:
+            is_valid = contract.functions.isTokenValid(token_id).call()
+            if not is_valid:
+                continue
+            fn = contract.functions.invalidateToken(token_id)
+            tx_hash = _send_tx(w3, fn)
+            tx_hashes.append(tx_hash)
+        except Exception as e:
+            # Log loi nhung tiep tuc xu ly cac token con lai
+            print(f"[WARN] Could not invalidate token {token_id} for {owner_address}: {e}")
+
+    return tx_hashes
+
+
+def verify_nft_access(address: str) -> dict:
+    """
+    Kiem tra quyen truy cap dua tren Soulbound Token (token-gated access).
+    Tra ve dict: has_access, reason, has_valid_token, token_count.
+    """
+    w3 = get_web3()
+    contract = _get_soulbound_contract(w3)
+    addr = Web3.to_checksum_address(address)
+
+    has_token = contract.functions.hasValidToken(addr).call()
+    token_ids = contract.functions.getTokensOfOwner(addr).call()
+
+    if has_token:
+        return {
+            "has_access":      True,
+            "reason":          "Valid Soulbound Token found",
+            "has_valid_token": True,
+            "token_count":     len(token_ids),
+        }
+    elif len(token_ids) > 0:
+        return {
+            "has_access":      False,
+            "reason":          "All tokens have been invalidated",
+            "has_valid_token": False,
+            "token_count":     len(token_ids),
+        }
+    else:
+        return {
+            "has_access":      False,
+            "reason":          "No Soulbound Token found for this address",
+            "has_valid_token": False,
+            "token_count":     0,
+        }

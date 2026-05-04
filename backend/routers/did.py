@@ -90,20 +90,22 @@ def create_did(body: CreateDIDRequest):
 @router.post("/store-hash", response_model=StoreHashResponse)
 def store_hash(body: StoreHashRequest):
     """Creator luu hash tai lieu len blockchain."""
-    now = datetime.now(timezone.utc).isoformat()
+    # Kiem tra wallet co trong cache va lay did truoc
     conn = get_connection()
     try:
-        conn.execute(
-            """INSERT INTO pending_verifications
-               (wallet_address, did, doc_hash, ipfs_cid, creator_address, status, created_at, updated_at)
-               VALUES (?, (SELECT did FROM did_cache WHERE wallet_address=?), ?, ?, ?, 'submitted', ?, ?)""",
-            (body.wallet_address, body.wallet_address,
-             body.doc_hash, body.cid, body.creator_address, now, now),
-        )
-        conn.commit()
+        cache_row = conn.execute(
+            "SELECT did FROM did_cache WHERE wallet_address=?",
+            (body.wallet_address,),
+        ).fetchone()
     finally:
         conn.close()
 
+    if not cache_row or not cache_row["did"]:
+        raise HTTPException(status_code=404, detail="Wallet address chua co DID trong cache. Hay tao DID truoc.")
+
+    did_str = cache_row["did"]
+
+    # Goi blockchain truoc, neu thanh cong moi ghi DB
     try:
         tx_hash = blockchain_service.store_hash_on_chain(
             body.wallet_address, body.doc_hash, body.cid
@@ -113,13 +115,20 @@ def store_hash(body: StoreHashRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Blockchain error: {e}")
 
-    # Cap nhat cache
-    now2 = datetime.now(timezone.utc).isoformat()
+    # Blockchain thanh cong -> ghi DB
+    now = datetime.now(timezone.utc).isoformat()
     conn = get_connection()
     try:
         conn.execute(
+            """INSERT INTO pending_verifications
+               (wallet_address, did, doc_hash, ipfs_cid, creator_address, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, 'submitted', ?, ?)""",
+            (body.wallet_address, did_str,
+             body.doc_hash, body.cid, body.creator_address, now, now),
+        )
+        conn.execute(
             "UPDATE did_cache SET status='verified', ipfs_cid=?, last_synced_at=? WHERE wallet_address=?",
-            (body.cid, now2, body.wallet_address),
+            (body.cid, now, body.wallet_address),
         )
         conn.commit()
     finally:
@@ -175,16 +184,19 @@ def verify_did(address: str):
 
 @router.get("/record/{address}")
 def get_did_record(address: str):
-    """Lay toan bo thong tin DID tu blockchain."""
+    """Lay toan bo thong tin DID tu blockchain, bao gom created_at, verified_at, updated_at."""
     try:
-        return blockchain_service.verify_did_on_chain(address)
+        return blockchain_service.get_did_record_full(address)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/revoke")
 def revoke_did(body: RevokeDIDRequest):
-    """Thu hoi DID."""
+    """
+    Thu hoi DID.
+    Tu dong invalidate tat ca Soulbound Token con hieu luc cua dia chi nay.
+    """
     try:
         tx_hash = blockchain_service.revoke_did_on_chain(body.wallet_address)
     except ValueError as e:
@@ -203,7 +215,19 @@ def revoke_did(body: RevokeDIDRequest):
     finally:
         conn.close()
 
-    return {"tx_hash": tx_hash, "status": "pending"}
+    # Tu dong invalidate tat ca Soulbound Token con hieu luc
+    # Loi o buoc nay khong lam fail request revoke DID
+    invalidated_txs = []
+    try:
+        invalidated_txs = blockchain_service.invalidate_all_tokens_of_owner(body.wallet_address)
+    except Exception as e:
+        print(f"[WARN] Could not invalidate NFTs for {body.wallet_address}: {e}")
+
+    return {
+        "tx_hash":        tx_hash,
+        "status":         "confirmed",
+        "invalidated_nft_txs": invalidated_txs,
+    }
 
 
 @router.get("/stats")
@@ -213,6 +237,29 @@ def get_stats():
         return blockchain_service.get_did_stats()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/public-key/{address}")
+def get_public_key(address: str):
+    """
+    Lay public key RSA cua mot dia chi vi tu did_cache.
+    Creator dung endpoint nay de lay public key truoc khi ma hoa file.
+    """
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT public_key_pem FROM did_cache WHERE wallet_address=?",
+            (address,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Khong tim thay thong tin cho dia chi nay")
+    if not row["public_key_pem"]:
+        raise HTTPException(status_code=404, detail="Nguoi dung chua tao keypair RSA")
+
+    return {"wallet_address": address, "public_key_pem": row["public_key_pem"]}
 
 
 @router.get("/pending")
