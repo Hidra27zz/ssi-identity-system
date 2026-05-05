@@ -53,7 +53,7 @@ def store_hash_test():
     signed_tx = w3.eth.account.sign_transaction(tx, issuer_key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     
-    print(f"✅ Giao dịch đã gửi! Hash: {tx_hash.hex()}")
+    print(f"Giao dịch đã gửi! Hash: {tx_hash.hex()}")
 
 if __name__ == "__main__":
     store_hash_test()

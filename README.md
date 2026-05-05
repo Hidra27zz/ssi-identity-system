@@ -1,5 +1,45 @@
 # He Thong Dinh Danh Phi Tap Trung (SSI)
 
+
+Bài Tập 01: XÂY DỰNG HỆ THỐNG ĐỊNH DANH PHI TẬP TRUNG (SSI)
+1. Yêu cầu thực hiện
+Tiêu chí 1: Xây dựng & Triển khai Hợp đồng thông minh (10 điểm)
+Thực logic quản lý định danh (Identity Management) trên Ethereum.
+3 Nghiệp vụ chính:
+Khởi tạo Định danh (Create DID): Hàm đăng ký một mã định danh phi tập trung (Decentralized Identifier - DID) gắn liền với địa chỉ ví của người dùng.
+Quản lý mã Hash bằng cấp/chứng chỉ: Hàm cho phép "Identity Creator" (ví dụ: Trường đại học, Cơ quan nhà nước) xác nhận và lưu trữ mã hash của tài liệu định danh lên blockchain.
+Xác minh & Truy xuất: Hàm cho phép bên thứ ba (Verifier) kiểm tra tính hợp lệ của mã định danh mà không cần xem dữ liệu gốc.
+2 Ràng buộc logic:
+Sử dụng require để đảm bảo chỉ "Identity Creator" (được cấp quyền) mới có thể xác thực tài liệu cho người dùng.
+Kiểm tra trạng thái của định danh (ví dụ: định danh đã bị thu hồi/revoke hay chưa) trước khi xác minh thành công.
+Tiêu chí 2: Tương tác qua Web3.py / Frontend (10 điểm)
+Xây dựng giao diện cho 3 đối tượng tham gia: Identity Creator (Người cấp), Identity User (Người dùng), và Identity Manager/Verifier (Người xác minh).
+Chức năng tương tác:
+User Dashboard: Hiển thị thông tin định danh và cho phép người dùng phê duyệt quyền chia sẻ dữ liệu (explicit consent).
+Gửi giao dịch: Nhấn nút để gửi mã hash tài liệu từ Frontend lên Smart Contract.
+Mã hóa: Áp dụng thuật toán RSA hoặc mã hóa bất đối xứng để bảo vệ thông tin trước khi lưu trữ hoặc chia sẻ.
+Tiêu chí 3: Tích hợp IPFS (10 điểm)
+Do thông tin định danh (ảnh thẻ, bản quét hộ chiếu, metadata JSON) có kích thước lớn phải sử dụng IPFS để lưu trữ.
+Dữ liệu lưu trữ: Tối thiểu 3 loại (Ảnh chân dung, File PDF căn cước, Metadata JSON chứa thông tin cá nhân).
+Thao tác:
+Upload: Khi người dùng đăng ký, Frontend đẩy file lên IPFS, lấy mã CID (Content Identifier).
+Retrieve: Khi xác minh, hệ thống lấy mã CID từ Blockchain để truy xuất lại file gốc trên IPFS.
+Tiêu chí 4: Token ERC-20 / NFT Marketplace (10 điểm)
+Ứng dụng Token vào quản lý định danh để tăng tính thực tế:
+NFT Định danh (Soulbound Token): Tạo một NFT không thể chuyển nhượng đại diện cho định danh cá nhân hoặc bằng cấp của người dùng (ví dụ bằng lái xe hoặc bảo hiểm xã hội).
+Nghiệp vụ:
+Cấp phát (Mint): Cơ quan có thẩm quyền "mint" một NFT định danh vào ví người dùng sau khi xác minh thành công.
+Xác thực: Sử dụng sự tồn tại của NFT trong ví để cấp quyền truy cập vào các dịch vụ khác (Token-gated access).
+2. Quy trình thực hiện 
+Bước 1 - Khởi tạo: Người dùng cài đặt ứng dụng (Mobile App/Web) và tạo cặp khóa Public/Private Key. Public Key sẽ được dùng để tạo địa chỉ ví trên Ethereum.
+Bước 2 - Xác thực tài liệu: Người dùng gửi bản quét giấy tờ thực cho "Identity Creator". Đơn vị này xác minh, tạo mã hash của tài liệu và ký xác nhận.
+Bước 3 - Lưu trữ: File gốc được lưu trên IPFS. Mã hash (CID) của file và chữ ký số của đơn vị cấp được lưu trên Smart Contract để đảm bảo tính bất biến.
+Bước 4 - Sử dụng: Khi cần chứng minh danh tính (ví dụ: mở tài khoản ngân hàng), người dùng cung cấp mã định danh. Ngân hàng sẽ truy vấn Smart Contract để xác nhận tài liệu này đã được cơ quan có thẩm quyền xác thực hay chưa mà không cần lưu trữ lại bản sao giấy tờ.
+3. Lưu ý về Bảo mật & Quyền riêng tư
+Quyền kiểm soát: phải thể hiện được triết lý "Self-Sovereign": không thông tin nào được chia sẻ với bên thứ ba nếu không có sự đồng ý trực tiếp của chủ sở hữu.
+Không lưu PII on-chain: Tuyệt đối không lưu thông tin cá nhân trực tiếp (tên, số điện thoại) lên Blockchain. Chỉ lưu mã Hash hoặc mã CID của IPFS
+
+
 ## Phan cong module
 
 | Thu muc | Nguoi phu trach | Nhiem vu |
