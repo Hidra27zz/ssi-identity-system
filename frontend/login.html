@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập Hệ thống SSI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #6a85f1, #8fd3f4); }
+        .card { background: #fff; padding: 40px; border-radius: 12px; width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
+        .card h2 { margin-bottom: 20px; color: #333; }
+        .button { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; background: #f6851b; color: #fff; font-weight: bold; transition: background 0.3s; }
+        .button:hover { background: #e27618; }
+        .button:disabled { background: #a0aec0; cursor: not-allowed; }
+        .enter-button { margin-top: 20px; width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; background: #2ecc71; color: #fff; font-weight: bold; display: none; transition: background 0.3s; }
+        .enter-button:hover { background: #27ae60; }
+        .info { margin-top: 20px; text-align: left; font-size: 14px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; display: none; word-break: break-all; }
+        .info p { margin-bottom: 8px; color: #495057; }
+        .info p:last-child { margin-bottom: 0; }
+        .info b { color: #212529; }
+        .message { margin-top: 15px; font-size: 14px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Đăng nhập SSI</h2>
+
+        <button id="loginBtn" class="button" onclick="handleLogin()">
+            🦊 Kết nối ví MetaMask
+        </button>
+
+        <div id="infoBox" class="info">
+            <p><b>Địa chỉ ví:</b> <br><span id="addressDisplay"></span></p>
+            <p><b>Vai trò của bạn:</b> <span id="roleDisplay" style="color: #d35400; font-weight: bold;">Đang xác định...</span></p>
+        </div>
+
+        <p id="messageDisplay" class="message"></p>
+
+        <button id="enterBtn" class="enter-button" onclick="enterSystem()">
+            Vào hệ thống
+        </button>
+    </div>
+
+    <script>
+        let currentAddress = "";
+        let currentRole = "";
+
+        // =========================================================
+        // BƯỚC QUAN TRỌNG: DÁN ĐỊA CHỈ VÍ CỦA BẠN VÀO ĐÂY
+        // Thay các địa chỉ "0x..." dưới đây bằng địa chỉ thật trên MetaMask của bạn.
+        // Chú ý: Phải viết thường (chữ thường) tất cả các chữ cái trong địa chỉ.
+        // =========================================================
+        const ROLE_DATABASE = {
+    "0x118a1cf1fa89da1c25d71c7500ff5e0414edcf13": "creator", 
+    "0x80a40496a8172ece93d2de2bf61cf38cd61b4974": "verifier", 
+    "0xe7be620bfda9f9d2019098652b85a69eee67d23c": "user"      
+};
+
+        async function handleLogin() {
+            const loginBtn = document.getElementById("loginBtn");
+            const infoBox = document.getElementById("infoBox");
+            const addressDisplay = document.getElementById("addressDisplay");
+            const roleDisplay = document.getElementById("roleDisplay");
+            const messageDisplay = document.getElementById("messageDisplay");
+            const enterBtn = document.getElementById("enterBtn");
+
+            try {
+                if (!window.ethereum) {
+                    alert("Vui lòng cài đặt tiện ích MetaMask trên trình duyệt!");
+                    return;
+                }
+
+                loginBtn.innerText = "Đang kết nối...";
+                loginBtn.disabled = true;
+                messageDisplay.innerText = "Vui lòng xác nhận trên MetaMask...";
+                messageDisplay.style.color = "#333";
+
+                const accounts = await window.ethereum.request({
+                    method: "eth_requestAccounts",
+                });
+                
+                currentAddress = accounts[0];
+                addressDisplay.innerText = currentAddress;
+                infoBox.style.display = "block"; 
+
+                messageDisplay.innerText = "Đang kiểm tra quyền truy cập...";
+
+                await new Promise(resolve => setTimeout(resolve, 800)); 
+                
+                // =========================================================
+                // LOGIC TÌM VAI TRÒ DỰA VÀO ĐỊA CHỈ VÍ
+                // =========================================================
+                const addressLowerCase = currentAddress.toLowerCase();
+                
+                if (ROLE_DATABASE[addressLowerCase]) {
+                    currentRole = ROLE_DATABASE[addressLowerCase];
+                } else {
+                    // Nếu ví không có trong danh sách trên, mặc định cho làm "user" (hoặc bạn có thể báo lỗi)
+                    currentRole = "user"; 
+                }
+                
+                roleDisplay.innerText = currentRole.toUpperCase();
+                messageDisplay.innerText = "Kết nối thành công!";
+                messageDisplay.style.color = "green";
+                
+                loginBtn.innerText = "Đã kết nối ví";
+                loginBtn.style.background = "#28a745"; 
+                enterBtn.style.display = "block";
+
+            } catch (err) {
+                console.error(err);
+                messageDisplay.innerText = "Lỗi: " + (err.message || "Không thể kết nối ví.");
+                messageDisplay.style.color = "red";
+                loginBtn.innerText = "🦊 Kết nối ví MetaMask";
+                loginBtn.disabled = false;
+            }
+        }
+
+        function enterSystem() {
+            if (!currentRole) {
+                alert("Chưa xác định được vai trò, vui lòng kết nối lại ví.");
+                return;
+            }
+
+            switch (currentRole) {
+                case "user":
+                    window.location.href = "user.html";
+                    break;
+                case "creator":
+                    window.location.href = "creator.html";
+                    break;
+                case "verifier":
+                    window.location.href = "verifier.html";
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>
