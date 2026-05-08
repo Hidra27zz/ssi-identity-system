@@ -1,78 +1,237 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSI - Identity User</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI - Identity User</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>Identity User Dashboard</h1>
+<div id="toast-container"></div>
 
-        <div class="card">
-            <h2>1. Tạo cấp khóa RSA</h2>
-            <input type="text" id="walletAddress" placeholder="Địa chỉ ví 0x..." />
-            <button onclick="generateKeypair()">Tạo Keypair</button>
-            <div id="keypairResult" class="hidden">
-                <label>Public Key (đã lưu)</label>
-                <textarea id="publicKeyDisplay" rows="4" readonly></textarea>
-                <label>Private Key (lưu ở nơi an toàn - hệ thống không lưu)</label>
-                <textarea id="privateKeyDisplay" rows="4" readonly></textarea>
-                <button onclick="downloadPrivateKey()">Tải Private Key</button>
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      SSI Identity
+    </a>
+    <div class="navbar-links">
+      <a href="index.html">Trang chủ</a>
+      <a href="user.html" class="active">User</a>
+      <a href="creator.html">Creator</a>
+      <a href="verifier.html">Verifier</a>
+    </div>
+  </nav>
+
+  <div style="background:linear-gradient(135deg,#0f3460,#1a4a7a);padding:32px 24px 28px;color:#fff;">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <h1 style="color:#fff;font-size:1.5rem;margin-bottom:4px;">Identity User Dashboard</h1>
+        <p style="color:rgba(255,255,255,.7);font-size:.9rem;margin:0;">Quản lý định danh số của bạn trên blockchain Ethereum</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1100px;margin:0 auto;padding:28px 20px 60px;">
+    <div class="layout-2col">
+
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <h3>Trạng thái hiện tại</h3>
+          <div class="sidebar-stat">
+            <div class="sidebar-stat-icon blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-        </div>
-
-      <div class="card">
-            <h2>2. Tạo DID</h2>
-            <input type="text" id="createDidAddress" placeholder="Địa chỉ ví 0x..." />
-            <input type="text" id="createDidString" placeholder="Nhập chuỗi DID (VD: did:ethr:0x...)" />
-            <button onclick="createDID()">Tạo DID</button>
-        </div>
-
-        <div class="card">
-            <h2>3. Thông tin DID</h2>
-            <input type="text" id="checkAddress" placeholder="Địa chỉ ví 0x..." />
-            <button onclick="loadDIDInfo()">Xem thông tin</button>
-            <div id="didInfo" class="hidden">
-                <p>DID: <span id="didValue"></span></p>
-                <p>Trạng thái: <span id="didStatus"></span></p>
-                <p>IPFS CID: <span id="didCid"></span></p>
-                <p>Ngày tạo (created_at): <span id="didCreatedAt"></span></p>
-                <p>Ngày xác minh (verified_at): <span id="didVerifiedAt"></span></p>
-                <p>Số lần cập nhật (update_count): <span id="didUpdateCount"></span></p>
+            <div>
+              <div class="sidebar-stat-label">Ví Blockchain</div>
+              <div class="sidebar-stat-value" id="sidebarWallet">Chưa nhập</div>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>4. Kiểm tra Soulbound Token</h2>
-            <input type="text" id="nftAddress" placeholder="Địa chỉ ví 0x..." />
-            <button onclick="checkNFT()">Kiểm tra Token</button>
-            <div id="nftInfo" class="hidden">
-                <p>Có token hợp lệ: <span id="hasToken"></span></p>
-                <div id="tokenList">
-                    </div>
+          </div>
+          <div class="sidebar-stat">
+            <div class="sidebar-stat-icon blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>5. Yêu cầu chia sẻ dữ liệu đang chờ</h2>
-            <input type="text" id="consentDid" placeholder="DID của bạn..." />
-            <button onclick="loadPendingConsents()">Tải danh sách</button>
-            <div id="consentList"></div>
-        </div>
-        
-        <div class="card">
-            <h2>6. Quản lý Yêu cầu Truy cập</h2>
-            <label>Nhập DID của bạn để kiểm tra ai đang xin quyền:</label>
-            <input type="text" id="myDidForConsent" placeholder="did:ssi:..." />
-            <button onclick="loadPendingConsents()" class="btn-secondary">Tải danh sách yêu cầu</button>
-            
-            <div id="consentList" style="margin-top: 15px;">
-                <p><i>Chưa tải dữ liệu...</i></p>
+            <div>
+              <div class="sidebar-stat-label">DID</div>
+              <div class="sidebar-stat-value" id="sidebarDid">Chưa có</div>
             </div>
+          </div>
+          <div class="sidebar-stat">
+            <div class="sidebar-stat-icon green">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="sidebar-stat-label">Trạng thái DID</div>
+              <div class="sidebar-stat-value"><span id="sidebarStatus" class="status-badge not_found">Chưa xác minh</span></div>
+            </div>
+          </div>
+          <div class="sidebar-stat">
+            <div class="sidebar-stat-icon orange">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div>
+              <div class="sidebar-stat-label">Soulbound NFT</div>
+              <div class="sidebar-stat-value" id="sidebarNft">Chưa kiểm tra</div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <h3>Hướng dẫn</h3>
+          <ol style="padding-left:18px;font-size:.82rem;color:var(--text-muted);line-height:2.2;">
+            <li>Tạo cặp khóa RSA</li>
+            <li>Đăng ký DID trên blockchain</li>
+            <li>Xem thông tin DID</li>
+            <li>Kiểm tra Soulbound Token</li>
+            <li>Quản lý quyền truy cập</li>
+          </ol>
+        </div>
+      </aside>
+
+      <main>
+
+        <!-- Bước 1 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div>
+              <div class="card-title">Bước 1 — Tạo cặp khóa RSA</div>
+              <div class="card-subtitle">Sinh Public Key và Private Key cho ví của bạn</div>
+            </div>
+          </div>
+          <label>Địa chỉ ví Ethereum</label>
+          <input type="text" id="walletAddress" placeholder="0x..." oninput="updateSidebar()" />
+          <div style="background:var(--warning-bg);border:1px solid #fcd34d;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#78350f;margin-top:10px;">
+            Private key chỉ hiển thị 1 lần duy nhất. Hãy tải về và bảo quản an toàn. Hệ thống không lưu private key.
+          </div>
+          <button id="btnGenKeypair" onclick="generateKeypair()" style="margin-top:12px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            Tạo Keypair
+          </button>
+          <div id="keypairResult" class="hidden" style="margin-top:16px;">
+            <div class="divider"></div>
+            <label>Public Key (đã lưu vào hệ thống)</label>
+            <textarea id="publicKeyDisplay" rows="4" readonly></textarea>
+            <label>Private Key — Lưu ở nơi an toàn, hệ thống không lưu lại</label>
+            <textarea id="privateKeyDisplay" rows="4" readonly></textarea>
+            <button onclick="downloadPrivateKey()" class="btn-secondary" style="margin-top:10px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Tải Private Key (.pem)
+            </button>
+            <button onclick="savePrivateKeyToSession()" class="btn-secondary" style="margin-top:10px;">Lưu tạm trong phiên này</button>
+          </div>
         </div>
 
-    <script type="module" src="js/user.js"></script>
+        <!-- Bước 2 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div>
+              <div class="card-title">Bước 2 — Tạo DID</div>
+              <div class="card-subtitle">Đăng ký Decentralized Identifier lên blockchain Sepolia</div>
+            </div>
+          </div>
+          <label>Địa chỉ ví</label>
+          <input type="text" id="didWallet" placeholder="0x..." />
+          <label>Chuỗi DID</label>
+          <input type="text" id="didString" placeholder="did:ssi:0x..." />
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button id="btnCreateDID" onclick="createDID()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Tạo DID
+            </button>
+            <button onclick="autoFillDID()" class="btn-secondary">Tự động điền</button>
+          </div>
+          <div id="createDIDResult" class="hidden"></div>
+        </div>
+
+        <!-- Bước 3 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+            <div>
+              <div class="card-title">Bước 3 — Thông tin DID</div>
+              <div class="card-subtitle">Xem trạng thái và chi tiết DID của bất kỳ địa chỉ nào</div>
+            </div>
+          </div>
+          <label>Địa chỉ ví cần tra cứu</label>
+          <input type="text" id="checkAddress" placeholder="0x..." />
+          <button id="btnLoadDID" onclick="loadDIDInfo()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Xem thông tin
+          </button>
+          <div id="didInfo" class="hidden" style="margin-top:16px;">
+            <div class="divider"></div>
+            <div class="info-row"><span class="info-label">DID</span><span class="info-value" id="didValue">—</span></div>
+            <div class="info-row"><span class="info-label">Trạng thái</span><span id="didStatus" class="status-badge not_found">—</span></div>
+            <div class="info-row"><span class="info-label">IPFS CID</span><span class="info-value" id="didCid">—</span></div>
+            <div class="info-row"><span class="info-label">Ngày tạo</span><span class="info-value" id="didCreatedAt">—</span></div>
+            <div class="info-row"><span class="info-label">Ngày xác minh</span><span class="info-value" id="didVerifiedAt">—</span></div>
+            <div class="info-row"><span class="info-label">Xác minh bởi</span><span class="info-value" id="didVerifiedBy">—</span></div>
+            <div class="info-row"><span class="info-label">Số lần cập nhật</span><span class="info-value" id="didUpdateCount">—</span></div>
+          </div>
+        </div>
+
+        <!-- Bước 4 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div>
+              <div class="card-title">Bước 4 — Kiểm tra Soulbound Token</div>
+              <div class="card-subtitle">Xem các NFT định danh gắn với ví của bạn</div>
+            </div>
+          </div>
+          <label>Địa chỉ ví</label>
+          <input type="text" id="nftAddress" placeholder="0x..." />
+          <button id="btnCheckNFT" onclick="checkNFT()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Kiểm tra Token
+          </button>
+          <div id="nftInfo" class="hidden" style="margin-top:16px;">
+            <div class="divider"></div>
+            <div id="nftAccessResult"></div>
+            <div id="tokenList" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- Bước 5 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div>
+              <div class="card-title">Bước 5 — Quản lý Yêu cầu Truy cập</div>
+              <div class="card-subtitle">Phê duyệt hoặc từ chối các yêu cầu chia sẻ dữ liệu</div>
+            </div>
+          </div>
+          <input type="text" id="consentDid" style="display:none;" />
+          <label>DID của bạn</label>
+          <input type="text" id="myDidForConsent" placeholder="did:ssi:0x..." oninput="document.getElementById('consentDid').value=this.value" />
+          <button id="btnLoadConsents" onclick="loadPendingConsents()" class="btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+            Tải danh sách yêu cầu
+          </button>
+          <div id="consentList" style="margin-top:16px;"><p class="text-muted" style="font-style:italic;">Chưa tải dữ liệu...</p></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function updateSidebar() {
+      const w = document.getElementById('walletAddress').value;
+      if (w) {
+        document.getElementById('sidebarWallet').textContent = w.slice(0,6)+'...'+w.slice(-4);
+        document.getElementById('didWallet').value = w;
+        document.getElementById('checkAddress').value = w;
+        document.getElementById('nftAddress').value = w;
+      }
+    }
+  </script>
+  <script type="module" src="js/user.js"></script>
 </body>
 </html>

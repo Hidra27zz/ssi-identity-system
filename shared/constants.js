@@ -3,8 +3,8 @@ export const DID_REGISTRY_ADDRESS =
   "0x4442864E86805E1c5C8759ED1047Ef4802Ce15Ee";
 export const SOULBOUND_ADDRESS = "0xD3B88E485c8Ad25FeCeF28f9eb0DD7f7e73EdC2D";
 
-// Backend API
-export const BACKEND_URL = "http://localhost:8000";
+// Backend API - empty string = same origin (frontend served by FastAPI)
+export const BACKEND_URL = "";
 
 // Network
 export const CHAIN_ID = 11155111; // Sepolia testnet

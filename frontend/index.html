@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI Identity System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { padding: 0; }
+    .container { padding: 0; max-width: 100%; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      SSI Identity
+    </a>
+    <div class="navbar-links">
+      <a href="index.html" class="active">Trang chủ</a>
+      <a href="user.html">User</a>
+      <a href="creator.html">Creator</a>
+      <a href="verifier.html">Verifier</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 16px;font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:20px;color:rgba(255,255,255,.9);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Blockchain-Powered Identity
+      </div>
+      <h1>Hệ thống Định danh<br/>Tự chủ Phi tập trung</h1>
+      <p>Quản lý danh tính số trên blockchain với công nghệ DID, Soulbound NFT và mã hóa RSA. An toàn, minh bạch và hoàn toàn trong tầm kiểm soát của bạn.</p>
+      <div class="hero-actions">
+        <a href="user.html" class="btn btn-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Bắt đầu với tư cách User
+        </a>
+        <a href="creator.html" class="btn btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          Xác minh với tư cách Creator
+        </a>
+      </div>
+      <div style="margin-top:32px;font-size:.82rem;color:rgba(255,255,255,.5);">
+        Tổng DID trên Sepolia: <strong id="statsDisplay" style="color:rgba(255,255,255,.8);">Đang tải...</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="roles-section">
+    <h2>Ba vai trò trong hệ thống</h2>
+    <p class="section-sub">Mỗi vai trò có chức năng riêng biệt, phối hợp để tạo nên một hệ sinh thái định danh hoàn chỉnh</p>
+    <div class="role-cards">
+      <a href="user.html" class="role-card">
+        <div class="role-card-icon blue">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Identity User</h3>
+        <p>Tạo cặp khóa RSA, đăng ký DID, kiểm tra Soulbound Token và quản lý quyền truy cập dữ liệu cá nhân.</p>
+        <span class="btn btn-secondary btn-sm">Truy cập Dashboard</span>
+      </a>
+      <a href="creator.html" class="role-card">
+        <div class="role-card-icon red">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <h3>Identity Creator</h3>
+        <p>Xác minh tài liệu, upload lên IPFS và lưu hash lên Smart Contract để cấp phép định danh cho người dùng.</p>
+        <span class="btn btn-accent btn-sm">Truy cập Dashboard</span>
+      </a>
+      <a href="verifier.html" class="role-card">
+        <div class="role-card-icon green">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/></svg>
+        </div>
+        <h3>Identity Verifier</h3>
+        <p>Tra cứu và xác minh tính hợp lệ của DID, yêu cầu quyền truy cập dữ liệu và xem thông tin đã được cấp phép.</p>
+        <span class="btn btn-success btn-sm">Truy cập Dashboard</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="flow-section">
+    <h2>Quy trình hoạt động</h2>
+    <p class="section-sub">Từ đăng ký đến xác minh — toàn bộ trên blockchain Ethereum Sepolia</p>
+    <div class="flow-timeline">
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="flow-step-label">Tạo Keypair</div>
+        <div class="flow-step-sub">User tạo RSA</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="flow-step-label">Đăng ký DID</div>
+        <div class="flow-step-sub">Lên blockchain</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="flow-step-label">Upload IPFS</div>
+        <div class="flow-step-sub">Creator upload</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="flow-step-label">Xác minh Hash</div>
+        <div class="flow-step-sub">Lưu Smart Contract</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="flow-step-label">Cấp Soulbound NFT</div>
+        <div class="flow-step-sub">Token vĩnh viễn</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/></svg></div>
+        <div class="flow-step-label">Verifier Tra cứu</div>
+        <div class="flow-step-sub">Xác minh tức thì</div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#0a2444;color:rgba(255,255,255,.4);text-align:center;padding:24px;font-size:.82rem;">
+    SSI Identity System &mdash; Blockchain Ethereum Sepolia &mdash; <a href="/docs" style="color:rgba(255,255,255,.6);">API Docs</a>
+  </footer>
+
+  <script>
+    fetch('/api/did/stats').then(r=>r.json()).then(d=>{
+      document.getElementById('statsDisplay').textContent = d.total_dids + ' DID / ' + d.total_verified + ' đã xác minh';
+    }).catch(()=>{
+      document.getElementById('statsDisplay').textContent = 'Không kết nối được';
+    });
+  </script>
+</body>
+</html>

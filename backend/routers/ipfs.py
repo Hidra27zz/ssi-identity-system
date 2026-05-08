@@ -1,6 +1,12 @@
 """
 Router quan ly IPFS upload/retrieve.
 Nguoi phu trach: Thuy
+
+RBAC (Role-Based Access Control):
+- Upload file: chi Identity Creator (da duoc cap quyen tren blockchain) moi duoc upload
+- Upload metadata: chi Identity Creator
+- Retrieve file: bat ky ai co consent duoc phe duyet boi chu so huu
+- Upload history: chi chu so huu (owner_did) moi xem duoc lich su cua minh
 """
 from datetime import datetime, timezone
 
@@ -9,6 +15,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from backend.models.database import get_connection
+from backend.services import blockchain_service
 from backend.services.crypto_service import decrypt_file, encrypt_file, hash_document
 from backend.services.ipfs_service import (
     IPFSUnavailableError,
@@ -27,6 +34,26 @@ router = APIRouter()
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_DOC_TYPES = {"application/pdf"}
+
+
+def _require_creator_role(creator_address: str):
+    """
+    RBAC check: chi Identity Creator (duoc cap quyen tren blockchain) moi duoc upload.
+    Raise 403 neu khong co quyen.
+    """
+    try:
+        is_creator = blockchain_service.is_creator_on_chain(creator_address)
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Khong the kiem tra quyen Creator tren blockchain"
+        )
+    if not is_creator:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: {creator_address} khong co quyen Identity Creator. "
+                   "Lien he admin de duoc cap quyen."
+        )
 
 
 class UploadResponse(BaseModel):
@@ -48,12 +75,19 @@ async def upload_file(
     file: UploadFile,
     public_key: str = Form(...),
     did: str = Form(...),
+    creator_address: str = Form(...),
 ):
+    """
+    Upload file len IPFS sau khi ma hoa bang public key cua user.
+    RBAC: Chi Identity Creator (co quyen tren blockchain) moi duoc goi endpoint nay.
+    """
+    # RBAC: kiem tra quyen Creator tren blockchain
+    _require_creator_role(creator_address)
     content_type = file.content_type or ""
     file_bytes = await file.read()
     file_size = len(file_bytes)
 
-    # Xac dinh loai file va kiem tra kich thuoc
+    # Xác định loại file và kiểm tra kích thước
     if content_type in ALLOWED_IMAGE_TYPES:
         file_type = "portrait"
         if file_size > MAX_PORTRAIT_SIZE:
@@ -103,7 +137,14 @@ async def upload_metadata(
     issued_by: str = Form(...),
     portrait_cid: str = Form(...),
     document_cid: str = Form(...),
+    creator_address: str = Form(...),
 ):
+    """
+    Upload metadata JSON len IPFS.
+    RBAC: Chi Identity Creator moi duoc tao metadata.
+    """
+    # RBAC: kiem tra quyen Creator
+    _require_creator_role(creator_address)
     metadata = build_metadata_json(did, doc_type, issued_by, portrait_cid, document_cid)
     try:
         cid = await upload_json_to_ipfs(metadata)

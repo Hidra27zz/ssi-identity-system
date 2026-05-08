@@ -1,65 +1,206 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSI - Identity Verifier</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI - Identity Verifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .search-hero {
+      background: linear-gradient(135deg, #0f3460, #1a4a7a);
+      padding: 48px 24px 56px;
+      text-align: center;
+    }
+    .search-hero h1 { color: #fff; font-size: 1.6rem; margin-bottom: 8px; }
+    .search-hero p { color: rgba(255,255,255,.7); font-size: .95rem; margin-bottom: 28px; }
+    .search-box { display: flex; gap: 10px; max-width: 560px; margin: 0 auto; }
+    .search-box input {
+      flex: 1;
+      padding: 13px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: .95rem;
+      font-family: inherit;
+      outline: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    }
+    .search-box button {
+      padding: 13px 22px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      font-size: .95rem;
+      font-weight: 600;
+      margin: 0;
+      box-shadow: 0 4px 20px rgba(233,69,96,.35);
+    }
+    .search-box button:hover { background: var(--accent-dark); }
+    .result-card-verified  { border-top: 4px solid var(--success); }
+    .result-card-pending   { border-top: 4px solid var(--warning); }
+    .result-card-revoked   { border-top: 4px solid var(--danger); }
+    .result-card-not_found { border-top: 4px solid var(--text-light); }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Identity Verifier Dashboard</h1>
-        <p class="subtitle">Kiểm tra tính hợp lệ của định danh</p>
+<div id="toast-container"></div>
 
-        <div class="card">
-            <h2>Xác minh DID</h2>
-            <label>Địa chỉ ví cần kiểm tra</label>
-            <input type="text" id="verifyAddress" placeholder="0x..." />
-            <div style="text-align: center; margin-top: 15px;">
-        <button class="btn-red" onclick="verifyDID()">Xác minh</button>
-</div>
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      SSI Identity
+    </a>
+    <div class="navbar-links">
+      <a href="index.html">Trang chủ</a>
+      <a href="user.html">User</a>
+      <a href="creator.html">Creator</a>
+      <a href="verifier.html" class="active">Verifier</a>
+    </div>
+  </nav>
+
+  <!-- Search Hero -->
+  <section class="search-hero">
+    <h1>Identity Verifier</h1>
+    <p>Nhập địa chỉ ví Ethereum để kiểm tra tính hợp lệ của định danh</p>
+    <div class="search-box">
+      <input type="text" id="verifyAddress" placeholder="Nhập địa chỉ ví 0x..." onkeydown="if(event.key==='Enter')verifyDID()" />
+      <button onclick="verifyDID()" id="btnVerify">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Xác minh
+      </button>
+    </div>
+  </section>
+
+  <div class="container">
+
+    <!-- Kết quả xác minh -->
+    <div id="verifyResult" class="hidden">
+      <div class="card" id="verifyResultCard">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Kết quả xác minh</div>
+            <div class="card-subtitle">Thông tin định danh từ blockchain Ethereum Sepolia</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span id="resultStatus" class="status-badge not_found">—</span>
+          </div>
         </div>
 
-        <div id="verifyResult" class="hidden">
-            <div class="card">
-                <h2>Kết quả xác minh</h2>
-                <p><strong>Địa chỉ:</strong> <span id="resultAddress"></span></p>
-                <p><strong>Trạng thái:</strong> <span id="resultStatus" class="status-badge"></span></p>
-                <p><strong>DID:</strong> <span id="resultDid"></span></p>
-                <p><strong>IPFS CID (Metadata):</strong> <span id="resultCid"></span></p>
-                <p><strong>Thời gian kiểm tra:</strong> <span id="resultTime"></span></p>
-            </div>
+        <div id="verifyStatusBox" style="margin-bottom:16px;"></div>
+
+        <div class="info-row"><span class="info-label">Địa chỉ ví</span><span class="info-value" id="resultAddress">—</span></div>
+        <div class="info-row"><span class="info-label">DID</span><span class="info-value" id="resultDid">—</span></div>
+        <div class="info-row"><span class="info-label">IPFS CID</span><span class="info-value" id="resultCid">—</span></div>
+        <div class="info-row"><span class="info-label">Xác minh bởi</span><span class="info-value" id="resultVerifiedBy">—</span></div>
+        <div class="info-row"><span class="info-label">Số lần cập nhật</span><span class="info-value" id="resultUpdateCount">—</span></div>
+        <div class="info-row"><span class="info-label">Thời gian kiểm tra</span><span class="info-value" id="resultTime">—</span></div>
+
+        <div style="margin-top:14px;">
+          <button onclick="loadFullRecord()" class="btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Xem chi tiết đầy đủ
+          </button>
         </div>
+        <div id="fullRecord" class="hidden" style="margin-top:12px;"></div>
+      </div>
+    </div>
 
-        <div class="card">
-            <h2>Yêu cầu truy cập dữ liệu</h2>
-            <label>DID của chủ sở hữu</label>
-            <input type="text" id="ownerDid" placeholder="did:ssi:..." />
-            
-            <label>Địa chỉ ví của bạn (Verifier)</label>
-            <input type="text" id="requesterAddress" placeholder="0x..." />
-
-            <label>Loại dữ liệu cần xem</label>
-            <select id="dataType">
-                <option value="portrait">Ảnh chân dung</option>
-                <option value="document">Tài liệu PDF</option>
-                <option value="metadata">Metadata JSON</option>
-            </select>
-            
-            <button onclick="requestConsent()">Gửi yêu cầu truy cập</button>
-            <p id="consentResult" style="margin-top: 15px; font-weight: bold;"></p>
+    <!-- Kiểm tra NFT Token-gated -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-
-        <div class="card">
-            <h2>Xem dữ liệu đã được cấp quyền</h2>
-            <label>Nhập Mã Yêu Cầu (Consent ID) đã được phê duyệt</label>
-            <input type="text" id="accessConsentId" placeholder="VD: 12" />
-            
-            <button onclick="accessData()">Xem Dữ Liệu</button>
-            
-            <div id="accessResult" class="hidden"></div>
+        <div>
+          <div class="card-title">Kiểm tra quyền truy cập (Token-gated)</div>
+          <div class="card-subtitle">Xác nhận địa chỉ có Soulbound NFT hợp lệ hay không</div>
         </div>
+      </div>
+      <label>Địa chỉ ví cần kiểm tra</label>
+      <input type="text" id="nftCheckAddress" placeholder="0x..." />
+      <button id="btnCheckAccess" onclick="checkNFTAccess()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Kiểm tra quyền truy cập
+      </button>
+      <div id="nftAccessResult" class="hidden" style="margin-top:14px;"></div>
+    </div>
 
-    </div> <script type="module" src="js/verifier.js"></script>
+    <!-- Yêu cầu consent -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+        <div>
+          <div class="card-title">Yêu cầu truy cập dữ liệu</div>
+          <div class="card-subtitle">Gửi yêu cầu đến chủ sở hữu — họ sẽ phê duyệt hoặc từ chối</div>
+        </div>
+      </div>
+      <label>DID của chủ sở hữu</label>
+      <input type="text" id="ownerDid" placeholder="did:ssi:0x..." />
+      <label>Địa chỉ ví của bạn (Verifier)</label>
+      <input type="text" id="requesterAddress" placeholder="0x..." />
+      <label>Loại dữ liệu muốn xem</label>
+      <select id="dataType">
+        <option value="portrait">Ảnh chân dung</option>
+        <option value="document">Tài liệu PDF</option>
+        <option value="metadata">Metadata JSON</option>
+      </select>
+      <button id="btnRequestConsent" onclick="requestConsent()" style="margin-top:14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Gửi yêu cầu truy cập
+      </button>
+      <div id="consentResult" class="hidden" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- Tải file -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+        </div>
+        <div>
+          <div class="card-title">Tải file sau khi được phê duyệt</div>
+          <div class="card-subtitle">Nhập CID và private key của bạn để giải mã và xem file</div>
+        </div>
+      </div>
+      <label>IPFS CID của file (lấy từ kết quả xác minh)</label>
+      <input type="text" id="retrieveCid" placeholder="Qm..." />
+      <label>DID của chủ sở hữu</label>
+      <input type="text" id="retrieveOwnerDid" placeholder="did:ssi:0x..." />
+      <label>Địa chỉ ví của bạn</label>
+      <input type="text" id="retrieveRequester" placeholder="0x..." />
+      <label>Private Key của bạn (để giải mã file)</label>
+      <textarea id="retrievePrivateKey" rows="4" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+      <button id="btnRetrieve" onclick="retrieveFile()" style="margin-top:14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Tải và Giải Mã File
+      </button>
+      <div id="retrieveResult" class="hidden" style="margin-top:16px;"></div>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.verifyDID) {
+        const _orig = window.verifyDID;
+        window.verifyDID = async function() {
+          await _orig();
+          const statusEl = document.getElementById('resultStatus');
+          const card = document.getElementById('verifyResultCard');
+          if (statusEl && card) {
+            const cls = Array.from(statusEl.classList).find(c => c !== 'status-badge') || 'not_found';
+            card.className = 'card result-card-' + cls;
+          }
+        };
+      }
+    });
+  </script>
+  <script type="module" src="js/verifier.js"></script>
 </body>
 </html>

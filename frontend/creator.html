@@ -1,71 +1,360 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSI - Identity Creator</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI - Identity Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .upload-zone {
+      background: #f8fafc;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .upload-zone:hover { border-color: var(--primary); }
+    .upload-zone-title {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Identity Creator Dashboard</h1>
-        <p class="subtitle">Xác minh dữ liệu và lưu hash lên blockchain</p>
+<div id="toast-container"></div>
 
-        <div class="card">
-            <h2>Danh sách DID chờ xác minh</h2>
-            <button onclick="loadPendingRequests()">Tải danh sách</button>
-            <div id="pendingList" style="margin-top: 10px;">
-                <p><i>Chưa tải dữ liệu...</i></p>
-            </div>
-        </div>
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      SSI Identity
+    </a>
+    <div class="navbar-links">
+      <a href="index.html">Trang chủ</a>
+      <a href="user.html">User</a>
+      <a href="creator.html" class="active">Creator</a>
+      <a href="verifier.html">Verifier</a>
+    </div>
+  </nav>
 
-        <div class="card">
-            <h2>Bước 1: Thông tin người dùng</h2>
-            <label>Địa chỉ ví của người dùng</label>
-            <input type="text" id="userAddress" placeholder="0x..." />
+  <div style="background:linear-gradient(135deg,#0f3460,#1a4a7a);padding:32px 24px 28px;color:#fff;">
+    <div style="max-width:860px;margin:0 auto;display:flex;align-items:center;gap:16px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div>
+        <h1 style="color:#fff;font-size:1.5rem;margin-bottom:4px;">Identity Creator Dashboard</h1>
+        <p style="color:rgba(255,255,255,.7);font-size:.9rem;margin:0;">Xác minh tài liệu và lưu hash lên blockchain Ethereum</p>
+      </div>
+    </div>
+  </div>
 
-            <label>DID của người dùng</label>
-            <input type="text" id="userDid" placeholder="did:ssi:..." />
-        </div>
+  <div class="container">
 
-        <div class="card">
-            <h2>Bước 2: Upload tài liệu lên IPFS</h2>
-
-            <label>1. Ảnh chân dung (JPG/PNG, tối đa 5MB)</label>
-            <input type="file" id="portraitFile" accept="image/jpeg,image/png" />
-            <button onclick="uploadFile('portrait')">Upload ảnh</button>
-            <p id="portraitCid" class="cid-display"></p>
-
-            <label>2. File PDF căn cước (tối đa 10MB)</label>
-            <input type="file" id="documentFile" accept="application/pdf" />
-            <button onclick="uploadFile('document')">Upload PDF</button>
-            <p id="documentCid" class="cid-display"></p>
-
-            <label>3. Metadata JSON (Gộp tự động từ Ảnh & PDF)</label>
-            <button onclick="uploadMetadata()" class="btn-secondary">Tạo & Upload Metadata JSON</button>
-            <p id="metadataCid" class="cid-display"></p>
-        </div>
-
-        <div class="card">
-            <h2>Bước 3: Gửi hash lên Smart Contract</h2>
-            <label>Metadata Hash (tự động điền sau khi upload JSON)</label>
-            <input type="text" id="docHash" placeholder="SHA-256 hex..." readonly />
-
-            <label>Metadata IPFS CID (tự động điền)</label>
-            <input type="text" id="ipfsCid" placeholder="Qm..." readonly />
-
-            <label>Địa chỉ Creator (của bạn)</label>
-            <input type="text" id="creatorAddress" placeholder="0x..." />
-
-
-            <div style="text-align: center; margin-top: 15px;">
-            <button class="btn-red" onclick="toreHash()">Gửi hash lên Blockchain</button>
-        </div>
-        </div>
-
-        <div id="txStatus" class="status-box hidden"></div>
+    <!-- Tiến trình -->
+    <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:.82rem;font-weight:600;color:var(--text-muted);">Tiến trình xác minh</span>
+      <span id="progressLabel" style="font-size:.82rem;font-weight:600;color:var(--primary);">Bước 1 / 5</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:20%;"></div>
     </div>
 
-    <script type="module" src="js/creator.js"></script>
+    <!-- Stepper -->
+    <div class="steps-nav">
+      <div class="step-item active" id="stepNav1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Danh sách chờ</div>
+      </div>
+      <div class="step-item" id="stepNav2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Thông tin User</div>
+      </div>
+      <div class="step-item" id="stepNav3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Upload IPFS</div>
+      </div>
+      <div class="step-item" id="stepNav4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Gửi Blockchain</div>
+      </div>
+      <div class="step-item" id="stepNav5">
+        <div class="step-circle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-label">Hoàn thành</div>
+      </div>
+    </div>
+
+    <!-- BƯỚC 1: Danh sách chờ -->
+    <div class="step-panel active" id="panel1">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Danh sách DID chờ xác minh</div>
+            <div class="card-subtitle">Chọn một người dùng để bắt đầu quy trình xác minh</div>
+          </div>
+        </div>
+        <button onclick="loadPendingList()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Tải danh sách
+        </button>
+        <div id="pendingList" style="margin-top:16px;"><p class="text-muted" style="font-style:italic;">Nhấn "Tải danh sách" để xem các DID đang chờ xác minh...</p></div>
+        <div style="margin-top:20px;text-align:right;">
+          <button onclick="goToStep(2)" class="btn-secondary">
+            Tiếp theo
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BƯỚC 2: Thông tin người dùng -->
+    <div class="step-panel" id="panel2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Bước 2 — Thông tin người dùng</div>
+            <div class="card-subtitle">Nhập địa chỉ ví và lấy public key để mã hóa tài liệu</div>
+          </div>
+        </div>
+        <label>Địa chỉ ví của người dùng</label>
+        <input type="text" id="userAddress" placeholder="0x..." oninput="onUserAddressChange()" />
+        <label>DID của người dùng</label>
+        <input type="text" id="userDid" placeholder="did:ssi:0x..." />
+        <label>Địa chỉ ví Creator (của bạn)</label>
+        <input type="text" id="creatorAddress" placeholder="0x..." />
+        <button id="btnFetchPubKey" onclick="fetchPublicKey()" style="margin-top:14px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Lấy Public Key của User
+        </button>
+        <div id="pubKeyStatus" class="hidden" style="margin-top:10px;"></div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:space-between;">
+          <button onclick="goToStep(1)" class="btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Quay lại
+          </button>
+          <button onclick="goToStep(3)">
+            Tiếp theo
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BƯỚC 3: Upload IPFS -->
+    <div class="step-panel" id="panel3">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Bước 3 — Upload tài liệu lên IPFS</div>
+            <div class="card-subtitle">Ảnh chân dung, PDF căn cước và Metadata JSON — tất cả được mã hóa trước khi upload</div>
+          </div>
+        </div>
+
+        <!-- Ảnh chân dung -->
+        <div class="upload-zone">
+          <div class="upload-zone-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            1. Tài liệu 1 (JPG, PNG hoặc PDF, tối đa 5MB)
+          </div>
+          <input type="file" id="portraitFile" accept="image/jpeg,image/png,application/pdf" onchange="previewPortrait()" />
+          <div id="portraitPreviewWrap" class="hidden" style="margin-top:8px;border-radius:6px;overflow:hidden;max-height:160px;"><img id="portraitPreviewImg" style="width:100%;object-fit:cover;" /></div>
+          <button onclick="uploadFile('portrait')" id="btnUploadPortrait" class="btn-sm" style="margin-top:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload ảnh
+          </button>
+          <p id="portraitCid" class="cid-display" style="margin-top:6px;"></p>
+        </div>
+
+        <!-- File PDF -->
+        <div class="upload-zone">
+          <div class="upload-zone-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            2. Tài liệu 2 (JPG, PNG hoặc PDF, tối đa 10MB)
+          </div>
+          <input type="file" id="documentFile" accept="image/jpeg,image/png,application/pdf" />
+          <button onclick="uploadFile('document')" id="btnUploadDoc" class="btn-sm" style="margin-top:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload PDF
+          </button>
+          <p id="documentCid" class="cid-display" style="margin-top:6px;"></p>
+        </div>
+
+        <!-- Metadata JSON -->
+        <div class="upload-zone" style="background:#f0f4ff;border-color:rgba(15,52,96,.2);">
+          <div class="upload-zone-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            3. Metadata JSON (gộp từ Ảnh + PDF)
+          </div>
+          <label style="margin-top:0;">Loại tài liệu</label>
+          <select id="docType">
+            <option value="CCCD">Căn cước công dân</option>
+            <option value="HoChieu">Hộ chiếu</option>
+            <option value="BangLaiXe">Bằng lái xe</option>
+            <option value="BangTotNghiep">Bằng tốt nghiệp</option>
+            <option value="BaoHiemXaHoi">Bảo hiểm xã hội</option>
+          </select>
+          <label>Cơ quan cấp</label>
+          <input type="text" id="issuedBy" placeholder="Bộ Công An / Trường Đại Học..." />
+          <button onclick="uploadMetadata()" id="btnUploadMeta" class="btn-secondary btn-sm" style="margin-top:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
+            Tạo và Upload Metadata JSON
+          </button>
+          <p id="metadataCid" class="cid-display" style="margin-top:6px;"></p>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:space-between;">
+          <button onclick="goToStep(2)" class="btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Quay lại
+          </button>
+          <button onclick="goToStep(4)">
+            Tiếp theo
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BƯỚC 4: Gửi hash -->
+    <div class="step-panel" id="panel4">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Bước 4 — Gửi hash lên Smart Contract</div>
+            <div class="card-subtitle">Lưu hash và CID của tài liệu lên blockchain Ethereum Sepolia</div>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;">
+          <div style="font-size:.82rem;font-weight:600;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">Tóm tắt thông tin sẽ gửi lên blockchain</div>
+          <div class="info-row"><span class="info-label">Wallet User</span><span class="info-value" id="summaryWallet">—</span></div>
+          <div class="info-row"><span class="info-label">Document Hash</span><span class="info-value" id="summaryHash">—</span></div>
+          <div class="info-row"><span class="info-label">IPFS CID</span><span class="info-value" id="summaryCid">—</span></div>
+        </div>
+
+        <label>Document Hash (SHA-256, tự động điền)</label>
+        <input type="text" id="docHash" placeholder="SHA-256 hex..." readonly />
+        <label>IPFS CID (tự động điền)</label>
+        <input type="text" id="ipfsCid" placeholder="Qm..." readonly />
+
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:space-between;">
+          <button onclick="goToStep(3)" class="btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Quay lại
+          </button>
+          <button onclick="storeHash()" id="btnStoreHash" class="btn-accent">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Gửi Hash lên Blockchain
+          </button>
+        </div>
+      </div>
+      <div id="txStatus" class="status-box hidden"></div>
+    </div>
+
+    <!-- BƯỚC 5: Hoàn thành -->
+    <div class="step-panel" id="panel5">
+      <div class="card" style="text-align:center;padding:48px 24px;">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 style="font-size:1.3rem;color:var(--success);margin-bottom:10px;">Hoàn thành xác minh!</h2>
+        <p class="text-muted" style="margin-bottom:24px;">Dữ liệu đã được lưu lên blockchain thành công. Soulbound NFT sẽ được mint tự động bởi Orchestrator.</p>
+        <button onclick="resetCreator()" class="btn-secondary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Xử lý người dùng tiếp theo
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function goToStep(n) {
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel' + n).classList.add('active');
+      document.querySelectorAll('.step-item').forEach((el, i) => {
+        el.classList.remove('active', 'completed');
+        if (i + 1 < n) el.classList.add('completed');
+        if (i + 1 === n) el.classList.add('active');
+      });
+      const pct = Math.round((n / 5) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = 'Bước ' + n + ' / 5';
+      if (n === 4) {
+        const w = document.getElementById('userAddress').value;
+        const h = document.getElementById('docHash').value;
+        const c = document.getElementById('ipfsCid').value;
+        document.getElementById('summaryWallet').textContent = w || '—';
+        document.getElementById('summaryHash').textContent = h ? h.slice(0,16)+'...' : '—';
+        document.getElementById('summaryCid').textContent = c || '—';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetCreator() {
+      goToStep(1);
+      ['userAddress','userDid','creatorAddress','docHash','ipfsCid','issuedBy'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      ['portraitCid','documentCid','metadataCid'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+      const status = document.getElementById('txStatus');
+      if (status) { status.className = 'status-box hidden'; status.innerHTML = ''; }
+      const pubStatus = document.getElementById('pubKeyStatus');
+      if (pubStatus) pubStatus.classList.add('hidden');
+      const preview = document.getElementById('portraitPreviewWrap');
+      if (preview) preview.classList.add('hidden');
+    }
+
+    function previewPortrait() {
+      const file = document.getElementById('portraitFile').files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('portraitPreviewImg').src = e.target.result;
+        document.getElementById('portraitPreviewWrap').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    const _obs = new MutationObserver(() => {
+      const box = document.getElementById('txStatus');
+      if (box && box.classList.contains('success')) {
+        setTimeout(() => goToStep(5), 1500);
+      }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+      const box = document.getElementById('txStatus');
+      if (box) _obs.observe(box, { attributes: true, attributeFilter: ['class'] });
+    });
+  </script>
+  <script type="module" src="js/creator.js"></script>
 </body>
 </html>

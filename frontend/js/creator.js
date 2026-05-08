@@ -1,188 +1,230 @@
 /**
- * Logic cho Creator Dashboard.
- * Nguoi phu trach: Phuc
+ * Logic cho trang Identity Creator.
+ * Quy trình: Lấy public key → Upload ảnh → Upload PDF → Upload metadata → Gửi hash lên blockchain
  */
-import { apiFetch, apiUpload } from "./api.js";
-import { BLOCK_EXPLORER_URL } from "../../shared/constants.js";
+import { apiFetch, apiUpload, showToast, setLoading, store, showStatus } from "./api.js";
 
-let portraitCid = "";
-let documentCid = "";
+const BLOCK_EXPLORER = "https://sepolia.etherscan.io/tx/";
 
-// [ĐÃ THÊM] Hàm lấy danh sách chờ
-export async function loadPendingRequests() {
+// Lưu CID tạm trong bộ nhớ
+let _publicKey = "";
+let _portraitCid = "";
+let _documentCid = "";
+let _docHash = "";
+
+// ── Auto-fill địa chỉ Creator từ localStorage ─────────────────
+window.addEventListener("DOMContentLoaded", () => {
+    const saved = store.get("walletAddress");
+    if (saved) {
+        const el = document.getElementById("creatorAddress");
+        if (el && !el.value) el.value = saved;
+    }
+});
+
+// ── Bước 1: Tải danh sách DID chờ xác minh ───────────────────
+export async function loadPendingList() {
     try {
-        const requests = await apiFetch("/api/did/pending");
-        const listEl = document.getElementById("pendingList");
-        listEl.innerHTML = "";
-
-        if (requests.length === 0) {
-            listEl.innerHTML = "<p>Không có yêu cầu nào đang chờ xác minh.</p>";
+        const rows = await apiFetch("/api/did/pending");
+        const el = document.getElementById("pendingList");
+        if (rows.length === 0) {
+            el.innerHTML = '<p class="text-muted" style="font-style:italic;">Không có DID nào đang chờ xác minh.</p>';
             return;
         }
-
-        requests.forEach(req => {
-            const div = document.createElement("div");
-            div.style.padding = "10px";
-            div.style.borderLeft = "3px solid #007bff";
-            div.style.marginBottom = "10px";
-            div.style.backgroundColor = "#f8f9fa";
-            div.innerHTML = `
-                <p><strong>Ví:</strong> ${req.wallet_address}</p>
-                <p><strong>DID:</strong> ${req.did}</p>
-                <button onclick="selectUser('${req.wallet_address}', '${req.did}')">Xử lý người này</button>
-            `;
-            listEl.appendChild(div);
-        });
+        el.innerHTML = rows.map(r => `
+            <div class="pending-item">
+                <p><strong>Ví:</strong> ${r.wallet_address}</p>
+                <p><strong>DID:</strong> ${r.did}</p>
+                <p><strong>Thời gian:</strong> ${new Date(r.created_at).toLocaleString("vi-VN")}</p>
+                <button class="btn-sm" style="margin-top:8px;" onclick="fillFromPending('${r.wallet_address}','${r.did}','${r.doc_hash || ""}','${r.ipfs_cid || ""}')">
+                    Chọn người dùng này
+                </button>
+            </div>`).join("");
     } catch (e) {
-        alert(`Lỗi tải danh sách: ${e.message}`);
+        showToast("Lỗi tải danh sách: " + e.message, "error");
     }
 }
 
-// [ĐÃ THÊM] Hàm tự động điền form khi chọn user từ danh sách
-export function selectUser(address, did) {
-    document.getElementById("userAddress").value = address;
-    document.getElementById("userDid").value = did;
-    window.scrollTo({ top: document.getElementById("userAddress").offsetTop, behavior: "smooth" });
+export function fillFromPending(wallet, did, hash, cid) {
+    const fields = { userAddress: wallet, userDid: did, docHash: hash, ipfsCid: cid };
+    Object.entries(fields).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+    if (hash) _docHash = hash;
+    if (cid) _documentCid = cid;
+    showToast("Đã điền thông tin từ danh sách chờ", "info");
+    // Chuyển sang bước 2
+    if (typeof goToStep === "function") goToStep(2);
 }
 
-// [ĐÃ SỬA] Tách logic lấy Public Key ra một hàm riêng để dùng chung
-async function fetchPublicKey(walletAddress) {
+// ── Bước 2: Lấy public key của user ──────────────────────────
+export async function fetchPublicKey() {
+    const wallet = document.getElementById("userAddress").value.trim();
+    if (!wallet) { showToast("Nhập địa chỉ ví người dùng trước", "error"); return; }
+
+    setLoading("btnFetchPubKey", true);
+    const statusEl = document.getElementById("pubKeyStatus");
     try {
-        // Cố gắng lấy qua API
-        const pubKeyRes = await apiFetch(`/api/did/public-key/${walletAddress}`);
-        return pubKeyRes.public_key_pem;
-    } catch (e) {
-        // Fallback: Giữ lại prompt() đề phòng trường hợp Backend của bạn Thủy chưa sửa xong lỗi DB
-        const key = prompt(`Lỗi lấy Public Key từ Server (${e.message}). Vui lòng nhập thủ công:`);
-        return key;
-    }
-}
+        const result = await apiFetch("/api/did/public-key/" + wallet);
+        _publicKey = result.public_key_pem;
 
-export async function uploadFile(type) {
-    const fileInput = document.getElementById(type === "portrait" ? "portraitFile" : "documentFile");
-    const did = document.getElementById("userDid").value.trim();
-    const walletAddress = document.getElementById("userAddress").value.trim();
-    const file = fileInput.files[0];
-
-    if (!file || !did || !walletAddress) {
-        alert("Vui lòng nhập đủ Ví, DID và chọn file.");
-        return;
-    }
-
-    const publicKey = await fetchPublicKey(walletAddress);
-    if (!publicKey) return; // Hủy nếu không có key
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("public_key", publicKey);
-    formData.append("did", did);
-
-    showStatus(`Đang upload ${type} lên IPFS...`, "pending");
-
-    try {
-        const result = await apiUpload("/api/upload", formData);
-        if (type === "portrait") {
-            portraitCid = result.cid;
-            document.getElementById("portraitCid").textContent = `CID: ${result.cid}`;
-        } else {
-            documentCid = result.cid;
-            document.getElementById("documentCid").textContent = `CID: ${result.cid}`;
+        // Tự động điền DID nếu chưa có
+        const didEl = document.getElementById("userDid");
+        if (didEl && !didEl.value) {
+            const rec = await apiFetch("/api/did/record/" + wallet).catch(() => null);
+            if (rec && rec.did) didEl.value = rec.did;
         }
-        showStatus(`Upload ${type} thành công. CID: ${result.cid}`, "success");
+
+        statusEl.className = "status-box success";
+        statusEl.textContent = "Đã lấy public key thành công. Sẵn sàng upload tài liệu.";
+        statusEl.classList.remove("hidden");
+        showToast("Đã lấy public key", "success");
     } catch (e) {
-        showStatus(`Lỗi upload: ${e.message}`, "error");
+        statusEl.className = "status-box error";
+        statusEl.textContent = "Lỗi: " + e.message + ". Người dùng cần tạo keypair trước tại trang User.";
+        statusEl.classList.remove("hidden");
+        showToast("Lỗi: " + e.message, "error");
+    } finally {
+        setLoading("btnFetchPubKey", false);
     }
 }
 
-// [ĐÃ THÊM] Hàm tạo và upload Metadata JSON
-export async function uploadMetadata() {
-    if (!portraitCid || !documentCid) {
-        alert("Vui lòng upload cả Ảnh chân dung và PDF trước khi tạo Metadata.");
+export function onUserAddressChange() {
+    _publicKey = "";
+    const el = document.getElementById("pubKeyStatus");
+    if (el) el.classList.add("hidden");
+}
+
+// ── Bước 3: Upload file lên IPFS ─────────────────────────────
+export async function uploadFile(type) {
+    if (!_publicKey) {
+        showToast("Hãy lấy public key của user trước (Bước 2)", "error");
         return;
     }
 
-    const walletAddress = document.getElementById("userAddress").value.trim();
     const did = document.getElementById("userDid").value.trim();
+    const creator = document.getElementById("creatorAddress").value.trim();
+    if (!did) { showToast("Nhập DID của người dùng", "error"); return; }
+    if (!creator) { showToast("Nhập địa chỉ ví Creator của bạn", "error"); return; }
 
-    const publicKey = await fetchPublicKey(walletAddress);
-    if (!publicKey) return;
+    const fileInput = document.getElementById(type === "portrait" ? "portraitFile" : "documentFile");
+    const file = fileInput.files[0];
+    if (!file) { showToast("Chọn file trước", "error"); return; }
 
-    // Tạo object Metadata
-    const metadataObj = {
-        did: did,
-        portrait_cid: portraitCid,
-        document_cid: documentCid,
-        timestamp: new Date().toISOString()
-    };
+    const btnId = type === "portrait" ? "btnUploadPortrait" : "btnUploadDoc";
+    setLoading(btnId, true);
 
-    // Chuyển Object thành File JSON
-    const blob = new Blob([JSON.stringify(metadataObj, null, 2)], { type: "application/json" });
-    const file = new File([blob], "metadata.json", { type: "application/json" });
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("public_key", publicKey);
-    formData.append("did", did);
-
-    showStatus("Đang upload Metadata JSON lên IPFS...", "pending");
+    const cidEl = document.getElementById(type === "portrait" ? "portraitCid" : "documentCid");
+    cidEl.textContent = "Đang mã hóa và upload lên IPFS...";
+    cidEl.classList.remove("hidden");
 
     try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("public_key", _publicKey);
+        formData.append("did", did);
+        formData.append("creator_address", creator);
+
         const result = await apiUpload("/api/upload", formData);
-        document.getElementById("metadataCid").textContent = `CID: ${result.cid}`;
-        
-        // Gán Hash và CID của file JSON vào form gửi Blockchain
-        document.getElementById("docHash").value = result.doc_hash;
-        document.getElementById("ipfsCid").value = result.cid;
-        
-        showStatus(`Upload Metadata thành công. Sẵn sàng gửi Blockchain.`, "success");
+
+        if (type === "portrait") {
+            _portraitCid = result.cid;
+            cidEl.textContent = "Ảnh đã upload. CID: " + result.cid;
+        } else {
+            _documentCid = result.cid;
+            _docHash = result.doc_hash;
+            document.getElementById("docHash").value = _docHash;
+            document.getElementById("ipfsCid").value = _documentCid;
+            cidEl.textContent = "PDF đã upload. CID: " + result.cid;
+        }
+        showToast("Upload " + (type === "portrait" ? "ảnh" : "PDF") + " thành công", "success");
     } catch (e) {
-        showStatus(`Lỗi upload Metadata: ${e.message}`, "error");
+        cidEl.textContent = "Lỗi: " + e.message;
+        showToast("Lỗi upload: " + e.message, "error");
+    } finally {
+        setLoading(btnId, false);
     }
 }
 
+// ── Bước 3c: Upload metadata JSON ────────────────────────────
+export async function uploadMetadata() {
+    const did = document.getElementById("userDid").value.trim();
+    const creator = document.getElementById("creatorAddress").value.trim();
+    const docType = document.getElementById("docType").value;
+    const issuedBy = document.getElementById("issuedBy").value.trim();
+
+    if (!did) { showToast("Nhập DID người dùng", "error"); return; }
+    if (!creator) { showToast("Nhập địa chỉ ví Creator", "error"); return; }
+    if (!_portraitCid) { showToast("Upload ảnh chân dung trước (Bước 3.1)", "error"); return; }
+    if (!_documentCid) { showToast("Upload PDF trước (Bước 3.2)", "error"); return; }
+    if (!issuedBy) { showToast("Nhập cơ quan cấp", "error"); return; }
+
+    setLoading("btnUploadMeta", true);
+    const metaEl = document.getElementById("metadataCid");
+    metaEl.textContent = "Đang tạo và upload metadata...";
+    metaEl.classList.remove("hidden");
+
+    try {
+        const formData = new FormData();
+        formData.append("did", did);
+        formData.append("doc_type", docType);
+        formData.append("issued_by", issuedBy);
+        formData.append("portrait_cid", _portraitCid);
+        formData.append("document_cid", _documentCid);
+        formData.append("creator_address", creator);
+
+        const result = await apiUpload("/api/upload/metadata", formData);
+        metaEl.textContent = "Metadata đã upload. CID: " + result.cid;
+        showToast("Upload metadata thành công", "success");
+    } catch (e) {
+        metaEl.textContent = "Lỗi: " + e.message;
+        showToast("Lỗi: " + e.message, "error");
+    } finally {
+        setLoading("btnUploadMeta", false);
+    }
+}
+
+// ── Bước 4: Gửi hash lên blockchain ──────────────────────────
 export async function storeHash() {
-    const walletAddress = document.getElementById("userAddress").value.trim();
+    const wallet = document.getElementById("userAddress").value.trim();
     const hash = document.getElementById("docHash").value.trim();
     const cid = document.getElementById("ipfsCid").value.trim();
-    const creatorAddress = document.getElementById("creatorAddress").value.trim();
+    const creator = document.getElementById("creatorAddress").value.trim();
 
-    if (!walletAddress || !hash || !cid || !creatorAddress) {
-        alert("Vui lòng điền đầy đủ thông tin (Cần hoàn tất upload Metadata trước).");
+    if (!wallet || !hash || !cid || !creator) {
+        showToast("Vui lòng hoàn tất upload ảnh và PDF trước (hash và CID sẽ tự điền)", "error");
         return;
     }
 
-    showStatus("Đang gửi giao dịch lên blockchain...", "pending");
+    setLoading("btnStoreHash", true);
+    showStatus("txStatus", "Đang gửi giao dịch lên Sepolia blockchain... (có thể mất 15-30 giây)", "pending");
 
     try {
         const result = await apiFetch("/api/did/store-hash", {
             method: "POST",
             body: JSON.stringify({
-                wallet_address: walletAddress,
+                wallet_address: wallet,
                 doc_hash: hash,
                 cid: cid,
-                creator_address: creatorAddress,
+                creator_address: creator,
             }),
         });
-        const explorerLink = `${BLOCK_EXPLORER_URL}${result.tx_hash}`;
-        showStatus(
-            `Giao dịch đã gửi. TX: <a href="${explorerLink}" target="_blank">${result.tx_hash}</a>`,
+        showStatus("txStatus",
+            'Xác minh thành công!<br>TX: <a href="' + BLOCK_EXPLORER + result.tx_hash + '" target="_blank">' + result.tx_hash + '</a><br>Soulbound NFT sẽ được mint tự động.',
             "success"
         );
+        showToast("Gửi hash lên blockchain thành công!", "success");
+        store.set("walletAddress", creator);
     } catch (e) {
-        showStatus(`Lỗi: ${e.message}`, "error");
+        showStatus("txStatus", "Lỗi: " + e.message, "error");
+        showToast("Lỗi: " + e.message, "error");
+    } finally {
+        setLoading("btnStoreHash", false);
     }
 }
 
-function showStatus(message, type) {
-    const box = document.getElementById("txStatus");
-    box.innerHTML = message;
-    box.className = `status-box ${type}`;
-    box.classList.remove("hidden");
-}
-
-// Khai báo global
-window.loadPendingRequests = loadPendingRequests;
-window.selectUser = selectUser;
-window.uploadFile = uploadFile;
-window.uploadMetadata = uploadMetadata;
-window.storeHash = storeHash;
+// Expose to window
+Object.assign(window, {
+    loadPendingList, fillFromPending, fetchPublicKey, onUserAddressChange,
+    uploadFile, uploadMetadata, storeHash,
+});
