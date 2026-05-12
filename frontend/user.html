@@ -11,47 +11,67 @@
         <h1>Identity User Dashboard</h1>
 
         <div class="card">
-            <h2>Tao cap khoa RSA</h2>
-            <input type="text" id="walletAddress" placeholder="Dia chi vi 0x..." />
-            <button onclick="generateKeypair()">Tao Keypair</button>
+            <h2>1. Tạo cấp khóa RSA</h2>
+            <input type="text" id="walletAddress" placeholder="Địa chỉ ví 0x..." />
+            <button onclick="generateKeypair()">Tạo Keypair</button>
             <div id="keypairResult" class="hidden">
-                <label>Public Key (da luu)</label>
+                <label>Public Key (đã lưu)</label>
                 <textarea id="publicKeyDisplay" rows="4" readonly></textarea>
-                <label>Private Key (luu o noi an toan - he thong khong luu)</label>
+                <label>Private Key (lưu ở nơi an toàn - hệ thống không lưu)</label>
                 <textarea id="privateKeyDisplay" rows="4" readonly></textarea>
-                <button onclick="downloadPrivateKey()">Tai Private Key</button>
+                <button onclick="downloadPrivateKey()">Tải Private Key</button>
             </div>
         </div>
 
+      <div class="card">
+            <h2>2. Tạo DID</h2>
+            <input type="text" id="createDidAddress" placeholder="Địa chỉ ví 0x..." />
+            <input type="text" id="createDidString" placeholder="Nhập chuỗi DID (VD: did:ethr:0x...)" />
+            <button onclick="createDID()">Tạo DID</button>
+        </div>
+
         <div class="card">
-            <h2>Thong tin DID</h2>
-            <input type="text" id="checkAddress" placeholder="Dia chi vi 0x..." />
-            <button onclick="loadDIDInfo()">Xem Thong Tin</button>
+            <h2>3. Thông tin DID</h2>
+            <input type="text" id="checkAddress" placeholder="Địa chỉ ví 0x..." />
+            <button onclick="loadDIDInfo()">Xem thông tin</button>
             <div id="didInfo" class="hidden">
                 <p>DID: <span id="didValue"></span></p>
-                <p>Trang thai: <span id="didStatus"></span></p>
+                <p>Trạng thái: <span id="didStatus"></span></p>
                 <p>IPFS CID: <span id="didCid"></span></p>
+                <p>Ngày tạo (created_at): <span id="didCreatedAt"></span></p>
+                <p>Ngày xác minh (verified_at): <span id="didVerifiedAt"></span></p>
+                <p>Số lần cập nhật (update_count): <span id="didUpdateCount"></span></p>
             </div>
         </div>
 
         <div class="card">
-            <h2>Soulbound Token</h2>
-            <input type="text" id="nftAddress" placeholder="Dia chi vi 0x..." />
-            <button onclick="checkNFT()">Kiem Tra Token</button>
+            <h2>4. Kiểm tra Soulbound Token</h2>
+            <input type="text" id="nftAddress" placeholder="Địa chỉ ví 0x..." />
+            <button onclick="checkNFT()">Kiểm tra Token</button>
             <div id="nftInfo" class="hidden">
-                <p>Co token hop le: <span id="hasToken"></span></p>
-                <p>Token ID: <span id="tokenId"></span></p>
-                <p>Metadata URI: <span id="metadataUri"></span></p>
+                <p>Có token hợp lệ: <span id="hasToken"></span></p>
+                <div id="tokenList">
+                    </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>Yeu cau chia se du lieu dang cho</h2>
-            <input type="text" id="consentDid" placeholder="DID cua ban..." />
-            <button onclick="loadPendingConsents()">Tai Danh Sach</button>
+            <h2>5. Yêu cầu chia sẻ dữ liệu đang chờ</h2>
+            <input type="text" id="consentDid" placeholder="DID của bạn..." />
+            <button onclick="loadPendingConsents()">Tải danh sách</button>
             <div id="consentList"></div>
         </div>
-    </div>
+        
+        <div class="card">
+            <h2>6. Quản lý Yêu cầu Truy cập</h2>
+            <label>Nhập DID của bạn để kiểm tra ai đang xin quyền:</label>
+            <input type="text" id="myDidForConsent" placeholder="did:ssi:..." />
+            <button onclick="loadPendingConsents()" class="btn-secondary">Tải danh sách yêu cầu</button>
+            
+            <div id="consentList" style="margin-top: 15px;">
+                <p><i>Chưa tải dữ liệu...</i></p>
+            </div>
+        </div>
 
     <script type="module" src="js/user.js"></script>
 </body>
