@@ -62,7 +62,11 @@ class RevokeDIDRequest(BaseModel):
 
 @router.post("/create", response_model=CreateDIDResponse)
 def create_did(body: CreateDIDRequest):
-    """Tao DID moi cho dia chi vi."""
+    """
+    Tao DID bang private key tren server (PRIVATE_KEY trong .env).
+    Legacy / automation: msg.sender phai trung wallet_address — khong thich hop nhieu user.
+    User thuong dung MetaMask + POST /confirm-create.
+    """
     try:
         tx_hash = blockchain_service.create_did_on_chain(body.wallet_address, body.did)
     except ValueError as e:
@@ -85,6 +89,42 @@ def create_did(body: CreateDIDRequest):
         conn.close()
 
     return CreateDIDResponse(tx_hash=tx_hash, did=body.did, status="pending")
+
+
+class ConfirmClientDIDRequest(BaseModel):
+    """Sau khi nguoi dung goi createDID() bang MetaMask, gui tx_hash de dong bo DB."""
+    tx_hash: str
+    wallet_address: str
+    did: str
+
+
+@router.post("/confirm-create", response_model=CreateDIDResponse)
+def confirm_create_did(body: ConfirmClientDIDRequest):
+    """Xac minh tx on-chain va ghi did_cache — nhieu user, khong doi PRIVATE_KEY."""
+    try:
+        blockchain_service.confirm_user_create_did_tx(
+            body.tx_hash, body.wallet_address, body.did
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Blockchain error: {e}")
+
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_connection()
+    try:
+        conn.execute(
+            """INSERT INTO did_cache (wallet_address, did, status, last_synced_at, created_at)
+               VALUES (?, ?, 'pending', ?, ?)
+               ON CONFLICT(wallet_address) DO UPDATE
+               SET did=excluded.did, last_synced_at=excluded.last_synced_at""",
+            (body.wallet_address, body.did, now, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return CreateDIDResponse(tx_hash=body.tx_hash.strip(), did=body.did, status="pending")
 
 
 @router.post("/store-hash", response_model=StoreHashResponse)

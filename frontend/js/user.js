@@ -1,7 +1,34 @@
 /**
  * Logic cho trang Identity User.
  */
-import { apiFetch, showToast, setLoading, store, formatTs } from "./api.js";
+import { apiFetch, apiPost, showToast, setLoading, store, formatTs } from "./api.js";
+
+async function ensureMetaMaskChain(targetChainId) {
+    if (!window.ethereum) throw new Error("Chưa cài MetaMask.");
+    const hex = "0x" + BigInt(targetChainId).toString(16);
+    try {
+        await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: hex }],
+        });
+    } catch (e) {
+        if (e?.code === 4902) {
+            await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: hex,
+                    chainName: targetChainId === 31337 ? "Anvil Local" : "Sepolia",
+                    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+                    rpcUrls: targetChainId === 31337
+                        ? ["http://127.0.0.1:8545"]
+                        : ["https://rpc.sepolia.org"],
+                }],
+            });
+        } else {
+            throw e;
+        }
+    }
+}
 
 // ── Auto-fill từ localStorage ─────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
@@ -88,18 +115,51 @@ export async function createDID() {
     const wallet = document.getElementById("didWallet").value.trim();
     const did = document.getElementById("didString").value.trim();
     if (!wallet || !did) { showToast("Nhập đầy đủ địa chỉ ví và chuỗi DID", "error"); return; }
+    if (!window.ethereum) { showToast("Cần MetaMask để ký createDID (mỗi user một ví).", "error"); return; }
+    const ethersLib = window.ethers;
+    if (!ethersLib) { showToast("Thiếu thư viện ethers — tải lại trang.", "error"); return; }
 
     setLoading("btnCreateDID", true);
     const resultEl = document.getElementById("createDIDResult");
     resultEl.className = "status-box pending";
-    resultEl.textContent = "Đang gửi giao dịch lên Sepolia...";
+    resultEl.textContent = "Đang chuẩn bị MetaMask…";
     resultEl.classList.remove("hidden");
 
     try {
-        const result = await apiFetch("/api/did/create", {
-            method: "POST",
-            body: JSON.stringify({ wallet_address: wallet, did }),
+        const { DID_REGISTRY_ADDRESS, CHAIN_ID, BLOCK_EXPLORER_URL } = await import("/shared/constants.js");
+        const zero = "0x0000000000000000000000000000000000000000";
+        if (!DID_REGISTRY_ADDRESS || DID_REGISTRY_ADDRESS === zero) {
+            throw new Error("Chưa cấu hình DID_REGISTRY_ADDRESS trong shared/constants.js");
+        }
+
+        await ensureMetaMaskChain(CHAIN_ID);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+
+        const provider = new ethersLib.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const mmAddr = (await signer.getAddress()).toLowerCase();
+        if (mmAddr !== wallet.toLowerCase()) {
+            throw new Error(
+                "MetaMask đang chọn ví khác với ô Địa chỉ ví. Hãy chọn đúng tài khoản có địa chỉ " + wallet
+            );
+        }
+
+        const abiRes = await fetch("/shared/abis/DID_Registry.json");
+        if (!abiRes.ok) throw new Error("Không tải được ABI DID_Registry.");
+        const abi = await abiRes.json();
+        const contract = new ethersLib.Contract(DID_REGISTRY_ADDRESS, abi, signer);
+
+        resultEl.textContent = "Mở MetaMask và xác nhận giao dịch createDID…";
+        const tx = await contract.createDID(did);
+        resultEl.textContent = "Đang chờ xác nhận block… " + tx.hash;
+        await tx.wait();
+
+        const result = await apiPost("/api/did/confirm-create", {
+            tx_hash: tx.hash,
+            wallet_address: wallet,
+            did,
         });
+
         store.set("walletAddress", wallet);
         store.set("did", did);
         updateSidebar(wallet);
@@ -107,13 +167,19 @@ export async function createDID() {
         if (el2) el2.value = did;
         const el3 = document.getElementById("consentDid");
         if (el3) el3.value = did;
+
+        const txh = String(result.tx_hash || tx.hash);
+        const explorerBase = BLOCK_EXPLORER_URL || "https://sepolia.etherscan.io/tx/";
+        const link = explorerBase.replace(/\/?$/, "/") + txh.replace(/^\/+/, "");
+
         resultEl.className = "status-box success";
-        resultEl.innerHTML = "Tạo DID thành công!<br>TX: <a href='https://sepolia.etherscan.io/tx/" + result.tx_hash + "' target='_blank'>" + result.tx_hash + "</a>";
+        resultEl.innerHTML =
+            "Tạo DID thành công!<br>TX: <a href=\"" + link + "\" target=\"_blank\" rel=\"noopener\">" + (result.tx_hash || tx.hash) + "</a>";
         showToast("Tạo DID thành công!", "success");
     } catch (e) {
         resultEl.className = "status-box error";
-        resultEl.textContent = "Lỗi: " + e.message;
-        showToast("Lỗi: " + e.message, "error");
+        resultEl.textContent = "Lỗi: " + (e?.shortMessage || e?.message || e);
+        showToast("Lỗi: " + (e?.shortMessage || e?.message || e), "error");
     } finally {
         setLoading("btnCreateDID", false);
     }

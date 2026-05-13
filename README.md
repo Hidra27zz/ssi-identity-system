@@ -87,6 +87,18 @@ Mo truc tiep trong trinh duyet hoac dung VS Code Live Server:
     # hoac:
     pytest --tb=short -v
 
+## Demo nhanh tren Sepolia (tai khoan MetaMask cua ban)
+
+1. **Lay Sepolia ETH**: chuyen MetaMask sang mang **Sepolia**, lay ETH test (faucet: tim `Sepolia faucet` tren mang).
+2. **Tao `.env`**: `cp .env.example .env` roi dien:
+   - `RPC_URL` = endpoint Sepolia (Infura / Alchemy / `https://rpc.sepolia.org` neu phu hop).
+   - `PRIVATE_KEY` = key cua **cung vi** ban muon dung de backend ky giao dich (khong commit len Git).
+   - `IPFS_API_KEY` / `IPFS_SECRET_KEY` = tai khoan Pinata.
+3. **Contract & mang**: `shared/constants.py` va `shared/constants.js` da dat `CHAIN_ID` = **11155111** (Sepolia) va dia chi DID Registry / Soulbound. Neu ban **tu deploy** len Sepolia, cap nhat hai dia chi do sau deploy.
+4. **Vai tro Creator**: tren contract, chi dia chi co `isCreator == true` moi goi duoc `store-hash` qua backend. Vi deploy mac dinh la creator; neu ban chi la user, can owner grant quyen (hoac deploy moi bang vi cua ban).
+5. **Chay backend**: `uvicorn backend.main:app --reload --port 8000` — mo `http://127.0.0.1:8000/login.html`, MetaMask chon **Sepolia**.
+6. **NFT orchestrator** (tuy chon): `python nft-integration/integration.py` — `PRIVATE_KEY` (hoac `ISSUER_PRIVATE_KEY`) phai la vi **duoc phep mint** Soulbound tren contract da deploy.
+
 ## Deploy len Sepolia testnet
 
     # 1. Cap nhat .env voi Sepolia RPC_URL va PRIVATE_KEY thuc

@@ -35,9 +35,18 @@ STATUS_LABELS = {
 
 
 def get_web3() -> Web3:
+    if not RPC_URL or "YOUR_" in RPC_URL or "your_" in RPC_URL.lower():
+        raise ConnectionError(
+            "RPC_URL trong .env chua hop le (con placeholder YOUR_...). "
+            "Sua thanh URL that, vi du: https://rpc.sepolia.org "
+            "hoac https://sepolia.infura.io/v3/<PROJECT_ID> (lay ID tai infura.io)."
+        )
     w3 = Web3(Web3.HTTPProvider(RPC_URL))
     if not w3.is_connected():
-        raise ConnectionError(f"Khong the ket noi den Ethereum node: {RPC_URL}")
+        raise ConnectionError(
+            f"Khong the ket noi den Ethereum node: {RPC_URL}. "
+            "Kiem tra mang, firewall, va URL RPC (Sepolia / local)."
+        )
     return w3
 
 
@@ -67,13 +76,46 @@ def _get_soulbound_contract(w3: Web3):
     )
 
 
+def _raw_private_key_hex() -> str:
+    """
+    Lay private key Ethereum tu .env, chuan hoa va kiem tra do dai.
+    """
+    key = (PRIVATE_KEY or "").strip()
+    if not key:
+        raise ValueError(
+            "Thieu PRIVATE_KEY trong .env — backend can key de ky giao dich len blockchain."
+        )
+    if key.startswith("0x"):
+        key = key[2:]
+    key = key.replace(" ", "")
+    hex_ok = len(key) > 0 and all(c in "0123456789abcdefABCDEF" for c in key)
+    # 32 ky tu hex = 16 byte — dung bang do dai Infura Project ID (hay bi dan nham)
+    if len(key) == 32 and hex_ok:
+        raise ValueError(
+            "PRIVATE_KEY trong .env chi co 32 ky tu hex (16 byte) — thuong la ban da "
+            "dan nham Infura Project ID vao day. Infura ID chi dung trong RPC_URL, "
+            "khong phai PRIVATE_KEY. Can private key VI MetaMask (64 ky tu hex sau 0x): "
+            "MetaMask > ... > Account details > Show private key."
+        )
+    if len(key) != 64 or not hex_ok:
+        raise ValueError(
+            "PRIVATE_KEY trong .env phai la 32 byte (64 ky tu hex, co the co tien to 0x). "
+            f"Hien co {len(key)} ky tu hex. Kiem tra khong thieu ky tu, khong co khoang."
+        )
+    return "0x" + key.lower()
+
+
+def _signing_account(w3: Web3):
+    return w3.eth.account.from_key(_raw_private_key_hex())
+
+
 def _send_tx(w3: Web3, fn) -> str:
     """
     Ky, gui giao dich va cho receipt xac nhan.
     Raise ValueError neu transaction bi revert on-chain.
     Tra ve tx_hash hex.
     """
-    account = w3.eth.account.from_key(PRIVATE_KEY)
+    account = _signing_account(w3)
     nonce = w3.eth.get_transaction_count(account.address, "pending")
     tx = fn.build_transaction({
         "from":     account.address,
@@ -108,15 +150,82 @@ def _parse_revert(e: Exception) -> str:
 def create_did_on_chain(wallet_address: str, did: str) -> str:
     """
     Goi DID_Registry.createDID().
+    Contract gan DID cho msg.sender — vi ky (PRIVATE_KEY) phai trung wallet_address.
     Tra ve tx_hash.
     """
     w3 = get_web3()
+    account = _signing_account(w3)
+    if Web3.to_checksum_address(account.address) != Web3.to_checksum_address(wallet_address):
+        raise ValueError(
+            f"Dia chi trong form ({wallet_address}) khac vi backend dang ky ({account.address}). "
+            "createDID() tren chain luon gan DID cho dung vi gui giao dich — can dat PRIVATE_KEY "
+            "trong .env = private key cua chinh vi ban nhap o form (xuat tu MetaMask)."
+        )
     contract = _get_did_contract(w3)
     try:
         fn = contract.functions.createDID(did)
         return _send_tx(w3, fn)
     except ContractLogicError as e:
         raise ValueError(_parse_revert(e))
+
+
+def _norm_chain_did_str(value: object) -> str:
+    if value is None:
+        return ""
+    return str(value).strip().rstrip("\x00").strip()
+
+
+def confirm_user_create_did_tx(tx_hash: str, wallet_address: str, did: str) -> None:
+    """
+    Xac minh giao dich createDID da thanh cong, do dung wallet_address gui,
+    va DID on-chain khop did — nguoi dung ky bang MetaMask, khong can PRIVATE_KEY tren server.
+    """
+    w3 = get_web3()
+    h = (tx_hash or "").strip()
+    if not h:
+        raise ValueError("Thieu tx_hash.")
+    if not h.startswith("0x"):
+        h = "0x" + h
+    try:
+        receipt = w3.eth.get_transaction_receipt(h)
+    except Exception as exc:
+        raise ValueError(
+            "Khong doc duoc receipt. Giao dich chua vao block hoac tx_hash sai: " + str(exc)
+        ) from exc
+    if receipt.get("status") != 1:
+        raise ValueError("Giao dich that bai (reverted).")
+    try:
+        tx = w3.eth.get_transaction(h)
+    except Exception as exc:
+        raise ValueError("Khong doc duoc transaction: " + str(exc)) from exc
+
+    reg = Web3.to_checksum_address(DID_REGISTRY_ADDRESS)
+    tx_to = Web3.to_checksum_address(tx["to"])
+    if tx_to != reg:
+        raise ValueError("Giao dich khong gui toi DID Registry.")
+
+    from_addr = Web3.to_checksum_address(tx["from"])
+    want = Web3.to_checksum_address(wallet_address)
+    if from_addr != want:
+        raise ValueError(
+            "Nguoi gui giao dich khac dia chi vi trong form. Hay ket noi MetaMask dung vi truoc khi tao DID."
+        )
+
+    record = get_did_record_full(wallet_address)
+    if record.get("status") == "not_found":
+        raise ValueError(
+            "Chua thay DID tren contract cho dia chi nay — co the tx_hash khong phai createDID."
+        )
+    if record.get("status") != "pending":
+        raise ValueError(
+            f"Trang thai DID on-chain la {record.get('status')!r}, can pending ngay sau createDID."
+        )
+    on_chain = _norm_chain_did_str(record.get("did"))
+    want_did = _norm_chain_did_str(did)
+    if on_chain != want_did:
+        raise ValueError(
+            f"Chuoi DID on-chain ({on_chain!r}) khac DID trong yeu cau ({want_did!r})."
+        )
 
 
 def store_hash_on_chain(wallet_address: str, doc_hash: str, cid: str) -> str:

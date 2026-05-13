@@ -19,6 +19,7 @@
     </a>
     <div class="navbar-links">
       <a href="index.html">Trang chủ</a>
+      <a href="login.html">Đăng nhập</a>
       <a href="user.html" class="active">User</a>
       <a href="creator.html">Creator</a>
       <a href="verifier.html">Verifier</a>
@@ -132,7 +133,7 @@
             <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
             <div>
               <div class="card-title">Bước 2 — Tạo DID</div>
-              <div class="card-subtitle">Đăng ký Decentralized Identifier lên blockchain Sepolia</div>
+              <div class="card-subtitle">Ký giao dịch bằng MetaMask (mỗi người dùng ví riêng) — server không cần private key ví của bạn</div>
             </div>
           </div>
           <label>Địa chỉ ví</label>
@@ -232,6 +233,7 @@
       }
     }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script type="module" src="js/user.js"></script>
 </body>
 </html>

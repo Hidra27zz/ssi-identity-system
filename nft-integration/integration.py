@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.constants import DID_REGISTRY_ADDRESS, IPFS_GATEWAY, SOULBOUND_ADDRESS
 
 RPC_URL        = os.getenv("RPC_URL", "http://127.0.0.1:8545")
-PRIVATE_KEY    = os.getenv("ISSUER_PRIVATE_KEY", "")
+PRIVATE_KEY    = os.getenv("ISSUER_PRIVATE_KEY") or os.getenv("PRIVATE_KEY", "")
 SHARED_ABIS    = Path(__file__).parent.parent / "shared" / "abis"
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", "./backend/ssi.db")
 POLL_INTERVAL  = 5
@@ -31,7 +31,7 @@ POLL_INTERVAL  = 5
 # =========================
 # VALIDATION
 # =========================
-assert PRIVATE_KEY, "PRIVATE_KEY not set in .env"
+assert PRIVATE_KEY, "Set ISSUER_PRIVATE_KEY or PRIVATE_KEY in .env (key của ví được authorize mint NFT)"
 assert SOULBOUND_ADDRESS != "0x0000000000000000000000000000000000000000", "Soulbound not deployed"
 
 
@@ -39,6 +39,11 @@ assert SOULBOUND_ADDRESS != "0x0000000000000000000000000000000000000000", "Soulb
 # CONNECT
 # =========================
 def get_w3() -> Web3:
+    if not RPC_URL or "YOUR_" in RPC_URL:
+        raise RuntimeError(
+            "RPC_URL trong .env chua hop le (con placeholder YOUR_...). "
+            "Dung URL that, vi du https://rpc.sepolia.org hoac Infura/Alchemy."
+        )
     w3 = Web3(Web3.HTTPProvider(RPC_URL))
     assert w3.is_connected(), f"Cannot connect to RPC: {RPC_URL}"
     return w3
