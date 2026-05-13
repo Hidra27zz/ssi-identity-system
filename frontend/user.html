@@ -25,8 +25,13 @@
 
       <div class="card">
             <h2>2. Tạo DID</h2>
-            <input type="text" id="createDidAddress" placeholder="Địa chỉ ví 0x..." />
-            <input type="text" id="createDidString" placeholder="Nhập chuỗi DID (VD: did:ethr:0x...)" />
+            <input type="text" id="createDidAddress" placeholder="Địa chỉ ví 0x..."
+                oninput="autoFillDidFromAddress(this.value)" />
+            <input type="text" id="createDidString" placeholder="DID tự động điền khi nhập địa chỉ ví..." readonly
+                style="background:#f3f4f6;color:#555;" />
+            <p style="font-size:0.8rem;color:#888;margin-top:4px;">
+                DID được tạo tự động theo định dạng: <code>did:ssi:0x...</code>
+            </p>
             <button onclick="createDID()">Tạo DID</button>
         </div>
 
@@ -68,11 +73,38 @@
             <input type="text" id="myDidForConsent" placeholder="did:ssi:..." />
             <button onclick="loadPendingConsents()" class="btn-secondary">Tải danh sách yêu cầu</button>
             
-            <div id="consentList" style="margin-top: 15px;">
+            <div id="consentListAlt" style="margin-top: 15px;">
                 <p><i>Chưa tải dữ liệu...</i></p>
             </div>
         </div>
 
+    </div>
+
     <script type="module" src="js/user.js"></script>
+    <script>
+        // Tự động điền DID khi nhập địa chỉ ví
+        function autoFillDidFromAddress(addr) {
+            if (addr && addr.startsWith('0x') && addr.length === 42) {
+                document.getElementById('createDidString').value = 'did:ssi:' + addr.toLowerCase();
+            } else {
+                document.getElementById('createDidString').value = '';
+            }
+        }
+
+        // Khi nhập địa chỉ ví ở ô 1, tự động điền sang các ô khác
+        document.getElementById('walletAddress').addEventListener('input', function() {
+            const addr = this.value.trim();
+            if (addr.startsWith('0x') && addr.length === 42) {
+                document.getElementById('createDidAddress').value = addr;
+                document.getElementById('checkAddress').value = addr;
+                document.getElementById('nftAddress').value = addr;
+                autoFillDidFromAddress(addr);
+                // Tự động điền DID vào ô consent
+                const did = 'did:ssi:' + addr.toLowerCase();
+                document.getElementById('consentDid').value = did;
+                document.getElementById('myDidForConsent').value = did;
+            }
+        });
+    </script>
 </body>
 </html>

@@ -101,7 +101,6 @@ def get_pending_consents(did: str):
 def get_consent_history(did: str):
     """
     Lay lich su tat ca consent cua owner (pending + approved + rejected).
-    Phuc hop cho User Dashboard va Verifier xem lai lich su.
     """
     conn = get_connection()
     try:
@@ -112,3 +111,47 @@ def get_consent_history(did: str):
     finally:
         conn.close()
     return [dict(r) for r in rows]
+
+
+@router.get("/access/{consent_id}")
+def access_by_consent(consent_id: int):
+    """
+    Lay thong tin consent theo ID.
+    Verifier dung de kiem tra consent da duoc phe duyet chua va lay CID de truy xuat file.
+    """
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM consent_records WHERE id=?",
+            (consent_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Consent record khong ton tai")
+
+    record = dict(row)
+
+    if record["status"] != "approved":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Consent chua duoc phe duyet. Trang thai hien tai: {record['status']}"
+        )
+
+    # Kiem tra het han
+    if record.get("expires_at"):
+        from datetime import datetime, timezone
+        expires = datetime.fromisoformat(record["expires_at"])
+        if datetime.now(timezone.utc) > expires:
+            raise HTTPException(status_code=403, detail="Consent da het han")
+
+    return {
+        "consent_id":        record["id"],
+        "owner_did":         record["owner_did"],
+        "requester_address": record["requester_address"],
+        "data_type":         record["data_type"],
+        "status":            record["status"],
+        "expires_at":        record.get("expires_at"),
+        "message":           "Consent hop le. Su dung owner_did va requester_address de truy xuat file qua POST /api/retrieve/{cid}",
+    }

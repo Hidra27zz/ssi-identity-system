@@ -1,141 +1,581 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập Hệ thống SSI</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #6a85f1, #8fd3f4); }
-        .card { background: #fff; padding: 40px; border-radius: 12px; width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
-        .card h2 { margin-bottom: 20px; color: #333; }
-        .button { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; background: #f6851b; color: #fff; font-weight: bold; transition: background 0.3s; }
-        .button:hover { background: #e27618; }
-        .button:disabled { background: #a0aec0; cursor: not-allowed; }
-        .enter-button { margin-top: 20px; width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; background: #2ecc71; color: #fff; font-weight: bold; display: none; transition: background 0.3s; }
-        .enter-button:hover { background: #27ae60; }
-        .info { margin-top: 20px; text-align: left; font-size: 14px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; display: none; word-break: break-all; }
-        .info p { margin-bottom: 8px; color: #495057; }
-        .info p:last-child { margin-bottom: 0; }
-        .info b { color: #212529; }
-        .message { margin-top: 15px; font-size: 14px; font-weight: 500; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI Identity — Đăng nhập</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(160deg, #0a2444 0%, #0f3460 50%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #e2e8f0;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .logo svg { color: #e94560; }
+
+    .logo-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: rgba(226,232,240,0.5);
+      margin-bottom: 36px;
+    }
+
+    /* Role selector */
+    .role-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(226,232,240,0.45);
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .role-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: rgba(226,232,240,0.6);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .role-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .role-btn.active {
+      border-color: #e94560;
+      background: rgba(233,69,96,0.12);
+      color: #fff;
+    }
+
+    .role-btn svg {
+      display: block;
+      margin: 0 auto 8px;
+      opacity: 0.7;
+    }
+
+    .role-btn.active svg { opacity: 1; }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .divider-text {
+      font-size: 0.75rem;
+      color: rgba(226,232,240,0.35);
+    }
+
+    /* MetaMask button */
+    .metamask-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: #f6851b;
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 12px;
+    }
+
+    .metamask-btn:hover {
+      background: #e07b18;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(246,133,27,0.35);
+    }
+
+    .metamask-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Manual input */
+    .manual-section {
+      margin-top: 4px;
+    }
+
+    .manual-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 10px;
+    }
+
+    .manual-input::placeholder { color: rgba(226,232,240,0.3); }
+
+    .manual-input:focus {
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .manual-btn {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .manual-btn:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+    }
+
+    /* Status */
+    .status {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      display: none;
+    }
+
+    .status.success {
+      background: rgba(22,163,74,0.15);
+      border: 1px solid rgba(22,163,74,0.3);
+      color: #86efac;
+      display: block;
+    }
+
+    .status.error {
+      background: rgba(220,38,38,0.15);
+      border: 1px solid rgba(220,38,38,0.3);
+      color: #fca5a5;
+      display: block;
+    }
+
+    .status.info {
+      background: rgba(37,99,235,0.15);
+      border: 1px solid rgba(37,99,235,0.3);
+      color: #93c5fd;
+      display: block;
+    }
+
+    /* Connected state */
+    .connected-box {
+      background: rgba(22,163,74,0.1);
+      border: 1px solid rgba(22,163,74,0.25);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .connected-box.show { display: block; }
+
+    .connected-addr {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: #86efac;
+      word-break: break-all;
+      margin-bottom: 4px;
+    }
+
+    .connected-label {
+      font-size: 0.72rem;
+      color: rgba(134,239,172,0.6);
+    }
+
+    .enter-btn {
+      width: 100%;
+      padding: 13px;
+      background: #e94560;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .enter-btn.show { display: block; }
+    .enter-btn:hover { background: #c73652; }
+
+    .no-metamask {
+      font-size: 0.75rem;
+      color: rgba(226,232,240,0.35);
+      margin-top: 16px;
+    }
+
+    .no-metamask a {
+      color: rgba(226,232,240,0.55);
+    }
+
+    /* Quick accounts */
+    .quick-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .quick-label {
+      font-size: 0.72rem;
+      color: rgba(226,232,240,0.35);
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .quick-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .quick-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+
+    .quick-item:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    .quick-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .tag-c { background: rgba(233,69,96,0.2); color: #fca5a5; }
+    .tag-u { background: rgba(37,99,235,0.2); color: #93c5fd; }
+    .tag-v { background: rgba(22,163,74,0.2); color: #86efac; }
+
+    .quick-addr {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: rgba(226,232,240,0.55);
+      flex: 1;
+    }
+
+    .quick-use {
+      font-size: 0.7rem;
+      color: rgba(226,232,240,0.3);
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>Đăng nhập SSI</h2>
+<div class="card">
 
-        <button id="loginBtn" class="button" onclick="handleLogin()">
-            🦊 Kết nối ví MetaMask
-        </button>
+  <!-- Logo -->
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <span class="logo-text">SSI Identity</span>
+  </div>
+  <p class="subtitle">Hệ thống Định danh Phi tập trung</p>
 
-        <div id="infoBox" class="info">
-            <p><b>Địa chỉ ví:</b> <br><span id="addressDisplay"></span></p>
-            <p><b>Vai trò của bạn:</b> <span id="roleDisplay" style="color: #d35400; font-weight: bold;">Đang xác định...</span></p>
-        </div>
+  <!-- Role selector -->
+  <div class="role-label">Bạn là ai trong hệ thống?</div>
+  <div class="role-grid">
+    <button class="role-btn" id="roleUser" onclick="selectRole('user')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      User
+    </button>
+    <button class="role-btn" id="roleCreator" onclick="selectRole('creator')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      </svg>
+      Creator
+    </button>
+    <button class="role-btn" id="roleVerifier" onclick="selectRole('verifier')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      Verifier
+    </button>
+  </div>
 
-        <p id="messageDisplay" class="message"></p>
+  <!-- Connected state -->
+  <div class="connected-box" id="connectedBox">
+    <div class="connected-label">Đã kết nối ví</div>
+    <div class="connected-addr" id="connectedAddr"></div>
+  </div>
 
-        <button id="enterBtn" class="enter-button" onclick="enterSystem()">
-            Vào hệ thống
-        </button>
+  <!-- MetaMask button -->
+  <button class="metamask-btn" id="metamaskBtn" onclick="connectMetaMask()">
+    <svg width="24" height="24" viewBox="0 0 318.6 318.6" fill="none">
+      <polygon fill="#E2761B" stroke="#E2761B" stroke-linecap="round" stroke-linejoin="round" points="274.1,35.5 174.6,109.4 193,65.8"/>
+      <polygon fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" points="44.4,35.5 143.1,110.1 125.6,65.8"/>
+      <polygon fill="#D7C1B3" stroke="#D7C1B3" stroke-linecap="round" stroke-linejoin="round" points="238.3,206.8 211.8,247.4 268.5,263 284.8,207.7"/>
+      <polygon fill="#D7C1B3" stroke="#D7C1B3" stroke-linecap="round" stroke-linejoin="round" points="33.9,207.7 50.1,263 106.8,247.4 80.3,206.8"/>
+      <polygon fill="#D7C1B3" stroke="#D7C1B3" stroke-linecap="round" stroke-linejoin="round" points="103.6,138.2 87.8,162.1 144.1,164.6 142.1,104.1"/>
+      <polygon fill="#D7C1B3" stroke="#D7C1B3" stroke-linecap="round" stroke-linejoin="round" points="214.9,138.2 175.9,103.4 174.6,164.6 230.8,162.1"/>
+      <polygon fill="#233447" stroke="#233447" stroke-linecap="round" stroke-linejoin="round" points="106.8,247.4 140.6,230.9 111.4,208.1"/>
+      <polygon fill="#233447" stroke="#233447" stroke-linecap="round" stroke-linejoin="round" points="177.9,230.9 211.8,247.4 207.1,208.1"/>
+    </svg>
+    Kết nối MetaMask
+  </button>
+
+  <!-- Enter button (after connect) -->
+  <button class="enter-btn" id="enterBtn" onclick="enterSystem()">
+    Vào hệ thống
+  </button>
+
+  <!-- Divider -->
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-text">hoặc nhập thủ công</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- Manual input -->
+  <div class="manual-section">
+    <input
+      type="text"
+      class="manual-input"
+      id="manualAddr"
+      placeholder="Nhập địa chỉ ví 0x..."
+    />
+    <button class="manual-btn" onclick="enterManual()">Tiếp tục với địa chỉ này</button>
+  </div>
+
+  <!-- Status -->
+  <div class="status" id="status"></div>
+
+  <!-- No MetaMask notice -->
+  <p class="no-metamask" id="noMetaMask" style="display:none;">
+    Chưa cài MetaMask?
+    <a href="https://metamask.io/download/" target="_blank">Tải tại đây</a>
+  </p>
+
+  <!-- Quick accounts -->
+  <div class="quick-section">
+    <div class="quick-label">Tài khoản demo có sẵn (click để điền nhanh)</div>
+    <div class="quick-list">
+      <div class="quick-item" onclick="fillQuick('0x32268B487ebaB849d8f40B1a12776a543fdFb79a','creator')">
+        <span class="quick-tag tag-c">Creator</span>
+        <span class="quick-addr">0x32268B...Fb79a</span>
+        <span class="quick-use">DID VERIFIED</span>
+      </div>
+      <div class="quick-item" onclick="fillQuick('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266','user')">
+        <span class="quick-tag tag-u">User 1</span>
+        <span class="quick-addr">0xf39Fd6...2266</span>
+        <span class="quick-use">Tạo DID mới</span>
+      </div>
+      <div class="quick-item" onclick="fillQuick('0x70997970C51812dc3A010C7d01b50e0d17dc79C8','user')">
+        <span class="quick-tag tag-u">User 2</span>
+        <span class="quick-addr">0x70997...9C8</span>
+        <span class="quick-use">Tạo DID mới</span>
+      </div>
+      <div class="quick-item" onclick="fillQuick('0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC','verifier')">
+        <span class="quick-tag tag-v">Verifier</span>
+        <span class="quick-addr">0x3C44C...3BC</span>
+        <span class="quick-use">Xác minh</span>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let currentAddress = "";
-        let currentRole = "";
+</div>
 
-        // =========================================================
-        // BƯỚC QUAN TRỌNG: DÁN ĐỊA CHỈ VÍ CỦA BẠN VÀO ĐÂY
-        // Thay các địa chỉ "0x..." dưới đây bằng địa chỉ thật trên MetaMask của bạn.
-        // Chú ý: Phải viết thường (chữ thường) tất cả các chữ cái trong địa chỉ.
-        // =========================================================
-        const ROLE_DATABASE = {
-    "0x118a1cf1fa89da1c25d71c7500ff5e0414edcf13": "creator", 
-    "0x80a40496a8172ece93d2de2bf61cf38cd61b4974": "verifier", 
-    "0xe7be620bfda9f9d2019098652b85a69eee67d23c": "user"      
-};
+<script>
+  let selectedRole = 'user';
+  let connectedAddress = '';
 
-        async function handleLogin() {
-            const loginBtn = document.getElementById("loginBtn");
-            const infoBox = document.getElementById("infoBox");
-            const addressDisplay = document.getElementById("addressDisplay");
-            const roleDisplay = document.getElementById("roleDisplay");
-            const messageDisplay = document.getElementById("messageDisplay");
-            const enterBtn = document.getElementById("enterBtn");
+  // Check MetaMask on load
+  window.addEventListener('load', () => {
+    if (!window.ethereum) {
+      document.getElementById('noMetaMask').style.display = 'block';
+      document.getElementById('metamaskBtn').disabled = true;
+      document.getElementById('metamaskBtn').textContent = 'MetaMask chưa được cài đặt';
+    }
+    // Auto-select user role
+    selectRole('user');
+  });
 
-            try {
-                if (!window.ethereum) {
-                    alert("Vui lòng cài đặt tiện ích MetaMask trên trình duyệt!");
-                    return;
-                }
+  function selectRole(role) {
+    selectedRole = role;
+    ['user','creator','verifier'].forEach(r => {
+      document.getElementById('role' + r.charAt(0).toUpperCase() + r.slice(1))
+        .classList.toggle('active', r === role);
+    });
+  }
 
-                loginBtn.innerText = "Đang kết nối...";
-                loginBtn.disabled = true;
-                messageDisplay.innerText = "Vui lòng xác nhận trên MetaMask...";
-                messageDisplay.style.color = "#333";
+  async function connectMetaMask() {
+    if (!window.ethereum) {
+      showStatus('MetaMask chưa được cài đặt. Vui lòng cài đặt tại metamask.io', 'error');
+      return;
+    }
 
-                const accounts = await window.ethereum.request({
-                    method: "eth_requestAccounts",
-                });
-                
-                currentAddress = accounts[0];
-                addressDisplay.innerText = currentAddress;
-                infoBox.style.display = "block"; 
+    const btn = document.getElementById('metamaskBtn');
+    btn.disabled = true;
+    btn.textContent = 'Đang kết nối...';
 
-                messageDisplay.innerText = "Đang kiểm tra quyền truy cập...";
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      connectedAddress = accounts[0];
 
-                await new Promise(resolve => setTimeout(resolve, 800)); 
-                
-                // =========================================================
-                // LOGIC TÌM VAI TRÒ DỰA VÀO ĐỊA CHỈ VÍ
-                // =========================================================
-                const addressLowerCase = currentAddress.toLowerCase();
-                
-                if (ROLE_DATABASE[addressLowerCase]) {
-                    currentRole = ROLE_DATABASE[addressLowerCase];
-                } else {
-                    // Nếu ví không có trong danh sách trên, mặc định cho làm "user" (hoặc bạn có thể báo lỗi)
-                    currentRole = "user"; 
-                }
-                
-                roleDisplay.innerText = currentRole.toUpperCase();
-                messageDisplay.innerText = "Kết nối thành công!";
-                messageDisplay.style.color = "green";
-                
-                loginBtn.innerText = "Đã kết nối ví";
-                loginBtn.style.background = "#28a745"; 
-                enterBtn.style.display = "block";
+      // Show connected state
+      document.getElementById('connectedAddr').textContent = connectedAddress;
+      document.getElementById('connectedBox').classList.add('show');
+      document.getElementById('enterBtn').classList.add('show');
 
-            } catch (err) {
-                console.error(err);
-                messageDisplay.innerText = "Lỗi: " + (err.message || "Không thể kết nối ví.");
-                messageDisplay.style.color = "red";
-                loginBtn.innerText = "🦊 Kết nối ví MetaMask";
-                loginBtn.disabled = false;
-            }
-        }
+      btn.textContent = 'Đã kết nối';
+      showStatus('Kết nối ví thành công! Chọn vai trò và nhấn "Vào hệ thống".', 'success');
 
-        function enterSystem() {
-            if (!currentRole) {
-                alert("Chưa xác định được vai trò, vui lòng kết nối lại ví.");
-                return;
-            }
+      // Check network
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== '0xaa36a7') { // Sepolia = 0xaa36a7
+        showStatus('Cảnh báo: Bạn đang dùng mạng khác. Vui lòng chuyển sang Sepolia Testnet.', 'info');
+      }
 
-            switch (currentRole) {
-                case "user":
-                    window.location.href = "user.html";
-                    break;
-                case "creator":
-                    window.location.href = "creator.html";
-                    break;
-                case "verifier":
-                    window.location.href = "verifier.html";
-                    break;
-            }
-        }
-    </script>
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 318.6 318.6" fill="none">
+        <polygon fill="#E2761B" stroke="#E2761B" stroke-linecap="round" stroke-linejoin="round" points="274.1,35.5 174.6,109.4 193,65.8"/>
+        <polygon fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" points="44.4,35.5 143.1,110.1 125.6,65.8"/>
+      </svg> Kết nối MetaMask`;
+      showStatus('Kết nối bị từ chối. Vui lòng thử lại.', 'error');
+    }
+  }
+
+  function enterSystem() {
+    if (!connectedAddress) return;
+    navigate(connectedAddress, selectedRole);
+  }
+
+  function enterManual() {
+    const addr = document.getElementById('manualAddr').value.trim();
+    if (!addr) {
+      showStatus('Vui lòng nhập địa chỉ ví.', 'error');
+      return;
+    }
+    if (!addr.match(/^0x[0-9a-fA-F]{40}$/)) {
+      showStatus('Địa chỉ ví không hợp lệ. Phải bắt đầu bằng 0x và có 40 ký tự hex.', 'error');
+      return;
+    }
+    navigate(addr, selectedRole);
+  }
+
+  function fillQuick(addr, role) {
+    document.getElementById('manualAddr').value = addr;
+    selectRole(role);
+    showStatus('Đã điền địa chỉ. Nhấn "Tiếp tục với địa chỉ này" để vào hệ thống.', 'info');
+  }
+
+  function navigate(addr, role) {
+    // Luu dia chi vao localStorage de cac trang tu dong dien
+    localStorage.setItem('ssi_walletAddress', addr);
+    localStorage.setItem('ssi_role', role);
+
+    const pages = {
+      user:     'user.html',
+      creator:  'creator.html',
+      verifier: 'verifier.html',
+    };
+
+    showStatus('Đang chuyển hướng...', 'success');
+    setTimeout(() => {
+      window.location.href = pages[role] || 'user.html';
+    }, 600);
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+</script>
+
 </body>
 </html>
