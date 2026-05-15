@@ -152,6 +152,7 @@ def store_hash(body: StoreHashRequest):
         )
     except ValueError as e:
         err_msg = str(e)
+        if "DID does not exist" in err_msg:
             # Tu dong xoa du lieu rac (stale cache)
             conn2 = get_connection()
             try:
