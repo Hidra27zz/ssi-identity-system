@@ -151,7 +151,15 @@ def store_hash(body: StoreHashRequest):
             body.wallet_address, body.doc_hash, body.cid
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        err_msg = str(e)
+            # Tu dong xoa du lieu rac (stale cache)
+            conn2 = get_connection()
+            try:
+                conn2.execute("DELETE FROM did_cache WHERE wallet_address=?", (body.wallet_address,))
+                conn2.commit()
+            finally:
+                conn2.close()
+        raise HTTPException(status_code=400, detail=err_msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Blockchain error: {e}")
 
@@ -224,11 +232,29 @@ def verify_did(address: str):
 
 @router.get("/record/{address}")
 def get_did_record(address: str):
-    """Lay toan bo thong tin DID tu blockchain, bao gom created_at, verified_at, updated_at."""
+    """Lay toan bo thong tin DID tu blockchain, bao gom created_at, verified_at, updated_at, kem theo self-healing cache."""
     try:
-        return blockchain_service.get_did_record_full(address)
+        record = blockchain_service.get_did_record_full(address)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+        
+    # Self-heal local database if DID exists on chain
+    if record and record.get("status") != "not_found" and record.get("did"):
+        now = datetime.now(timezone.utc).isoformat()
+        conn = get_connection()
+        try:
+            conn.execute(
+                """INSERT INTO did_cache (wallet_address, did, status, last_synced_at, created_at)
+                   VALUES (?, ?, 'pending', ?, ?)
+                   ON CONFLICT(wallet_address) DO UPDATE
+                   SET did=excluded.did, last_synced_at=excluded.last_synced_at""",
+                (address, record["did"], now, now),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+            
+    return record
 
 
 @router.post("/revoke")
@@ -304,12 +330,55 @@ def get_public_key(address: str):
 
 @router.get("/pending")
 def get_pending_verifications():
-    """Lay danh sach DID dang cho Creator xac minh."""
+    """
+    Lay danh sach DID dang cho Creator xac minh.
+    Query tu did_cache (status='pending') — nhung user da tao DID qua MetaMask
+    nhung chua duoc Creator store-hash / xac minh.
+    """
     conn = get_connection()
     try:
-        rows = conn.execute(
-            "SELECT * FROM pending_verifications WHERE status='submitted' ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT wallet_address, did, status, created_at,
+                   (public_key_pem IS NOT NULL AND length(public_key_pem) > 0) as has_public_key
+            FROM did_cache
+            WHERE status = 'pending' AND did IS NOT NULL AND did != ''
+            ORDER BY created_at DESC
+        """).fetchall()
     finally:
         conn.close()
-    return [dict(r) for r in rows]
+
+    result_list = []
+    invalid_wallets = []
+    for r in rows:
+        wallet = r["wallet_address"]
+        try:
+            # Check on-chain to ensure it actually exists (handle node restarts/stale DB)
+            record = blockchain_service.get_did_record_full(wallet)
+            if record.get("status") == "not_found":
+                invalid_wallets.append(wallet)
+                continue
+        except Exception:
+            pass # fallback to DB if blockchain call fails
+
+        result_list.append({
+            "wallet_address": wallet,
+            "did": r["did"],
+            "doc_hash": "",
+            "ipfs_cid": "",
+            "created_at": r["created_at"],
+            "has_public_key": bool(r["has_public_key"]),
+        })
+
+    # Cleanup stale cache asynchronously or right away
+    if invalid_wallets:
+        conn = get_connection()
+        try:
+            conn.execute(
+                f"DELETE FROM did_cache WHERE wallet_address IN ({','.join(['?']*len(invalid_wallets))})",
+                invalid_wallets
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    return result_list

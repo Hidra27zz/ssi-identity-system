@@ -160,12 +160,20 @@ async def retrieve_file(cid: str, body: RetrieveRequest):
     Yeu cau consent da duoc approved va chua het han.
     private_key truyen qua request body, khong qua URL.
     """
-    # Kiem tra consent
+    # Kiem tra loai file tu upload_history de verify consent dung muc dich
     conn = get_connection()
     try:
+        # 1. Kiem tra xem CID nay thuoc loai nao
+        file_record = conn.execute(
+            "SELECT file_type FROM upload_history WHERE ipfs_cid=?", (cid,)
+        ).fetchone()
+        
+        file_type = file_record["file_type"] if file_record else "unknown"
+
+        # 2. Kiem tra consent
         row = conn.execute(
-            """SELECT status, expires_at FROM consent_records
-               WHERE owner_did=? AND requester_address=? AND data_type IS NOT NULL
+            """SELECT status, expires_at, data_type FROM consent_records
+               WHERE owner_did=? AND requester_address=?
                ORDER BY id DESC LIMIT 1""",
             (body.owner_did, body.requester_address),
         ).fetchone()
@@ -180,6 +188,14 @@ async def retrieve_file(cid: str, body: RetrieveRequest):
         expires = datetime.fromisoformat(row["expires_at"])
         if datetime.now(timezone.utc) > expires:
             raise HTTPException(status_code=403, detail="Access denied: consent da het han")
+
+    # Kiem tra pham vi quyen (Granular Access Control)
+    approved_type = row["data_type"]
+    if approved_type != "Tất cả":
+        if file_type == "portrait" and approved_type != "Ảnh chân dung":
+            raise HTTPException(status_code=403, detail=f"Access denied: Consent is for '{approved_type}', but you are trying to download Portrait Image.")
+        if file_type == "document" and approved_type != "Tài liệu (PDF)":
+            raise HTTPException(status_code=403, detail=f"Access denied: Consent is for '{approved_type}', but you are trying to download PDF Document.")
 
     try:
         encrypted_bytes = await retrieve_from_ipfs(cid)

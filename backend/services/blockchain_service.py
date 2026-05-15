@@ -117,10 +117,15 @@ def _send_tx(w3: Web3, fn) -> str:
     """
     account = _signing_account(w3)
     nonce = w3.eth.get_transaction_count(account.address, "pending")
+    
+    # Estimate gas to catch revert reasons early and dynamically set gas limit
+    estimated_gas = fn.estimate_gas({"from": account.address})
+    gas_limit = int(estimated_gas * 1.2) # 20% margin
+    
     tx = fn.build_transaction({
         "from":     account.address,
         "nonce":    nonce,
-        "gas":      300000,
+        "gas":      gas_limit,
         "gasPrice": w3.eth.gas_price,
     })
     signed = account.sign_transaction(tx)

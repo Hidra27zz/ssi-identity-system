@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 
 from backend.models.database import init_db
-from backend.routers import did, ipfs, nft, consent, crypto
+from backend.routers import did, ipfs, nft, consent, crypto, auth
 
 load_dotenv()
 
@@ -33,6 +33,7 @@ app.include_router(ipfs.router, prefix="/api", tags=["IPFS"])
 app.include_router(nft.router, prefix="/api/nft", tags=["NFT"])
 app.include_router(consent.router, prefix="/api/consent", tags=["Consent"])
 app.include_router(crypto.router, prefix="/api/crypto", tags=["Crypto"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 
 
 @app.on_event("startup")

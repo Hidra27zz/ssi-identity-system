@@ -1,0 +1,48 @@
+from cryptography.hazmat.primitives import serialization
+
+priv = """-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5COPxT90f9zAL
+a7ja+YqvOSNEvncV5+TWIesPTvAsR9s+ywZEu4cCCa1apjSCJcJgL/gpefoeOPV7
+uM8ES1uFBA6UtegofxKFifpZSoTaN5CljWJIa9R1yD6hf6BEqkF53bcET9NF/ndV
+5sVaByxii6xmRNm1D72bQWuBEpAMwOFGmStbsgr5Z8RUi6Vkg8S/JkSv2JtaL48q
+Pwo9HKrQpuv97+bEgse13pvKwxnmvBkwuTQbMXsu9DJxhbfd6/biA2MTLDx+tcsx
+LW0RPpI4Z3bS+1NAGfeyv6zoaDp4uwzwp7f2j0Gc5huRg0cWtwfh4pEU1LgDAOCH
+Y0R3aqxtAgMBAAECggEALWMQYpNH9rzP5KVGQTQ/v+5gh86+cDmjCKFmQqmGwR3Z
+GiR7w6VKHwZXpuoo7Bmt/aEWmrnoT7yB/pic8v03FEAkAXdDXJea5/Wp2ngscUh6
+6xjsmD4W7dMyBbREEEPA7s8jQuP/u2YJSKFkHEqxKPUA008lJcQYKrqXz5/JhM7q
+SOLqwNo2K2ecP7FHOq+zqYjaS0IlcG3tNF2uSt7BiucM7eOmQ1lc1cztz9VP7X79
+GT2tPDQfCXkQ7H2hRm5uWikNmp6muLvBpXLEMHZWWs2Q/FCi0u+3QoC+OCtdOW/z
++dpR20U66OvxdoMYxf/BdVrkbsh5TMS5B5fUBo5WUQKBgQDdoWzvdeVgaBFqxvrJ
+A8nrMWKtI3k0ESL7kQQS2K8YJt5GAAHmKUDesmO8ZmnR0MOjxEFBiyzJTEl2nuoj
+LlxMWCgs4eC0GxlFys0TmiIFFvFRxs7aqbHfb48l3QMcVCMw2v844zVT//9jY9tg
+SGE5Zf3WaqCyZ83IclqSd4gxVQKBgQDVuqLjSZfX2y0oYVOA7g9mimtpLGL1ouxV
+pW474mB99ViCHTqPBcC/rZO8zI0SsV3ZyVR3oe+jbJUeCc91se5DZEqDpfblCq/3
+nh9p52/jk5igGc2vIQYdLgR1vE+St05aGd+iA2aycRIHZ7ucrJ0khCcjoXhMY2wj
+3pbSn5ruuQKBgDcejYQkcw598071+6sAiTg4CQ18VAlx9ZxRHY0+XJWKHR+VouNG
+AT8haJKTed/XpsBU79HINjQ+B8s7jImBXy0Rg7Rd3M+OKcPkwwoL/Ef9w7iN1CYn
+q/ggu540EDD8b+AXpv/T6hBhC3gBfq68cYmf5vhrflnAXTprzkC8/58dAoGAC+WX
+q48tJJbOrLC+NS8LLGoIEJKn74RiI2JSAINZW6mMg7Gc0NlBIWpIDvpT3/Z/gt/y
+E7av4CjrJADny2VcHeQ3QZy7YYR2xxHGLd70G3bbyA2npVfxPy6QkP0qcMBDXECU
+cjA+RzCEEGV1zALPvHietR0H1TizjEuXmaHIvgECgYEAjIVeJfoLUL5wMCh21PtC
+p+YKkgaOCHu0OFd3xrvdOYgKzMAqeqo/omaoFTafPcjDR/2ibpTEqvk1apNu9Ej6
+748sw40ccFWE7f8ysnZ3ySVdbOh3ijDgXi8nC6BwFHIxMy/x9EmlUrdWVtFnKpdb
+fpjr+Z+BuJiBT67cB5RM0XE=
+-----END PRIVATE KEY-----"""
+
+pub = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuQjj8U/dH/cwC2u42vmK
+rzkjRL53Fefk1iHrD07wLEfbPssGRLuHAgmtWqY0giXCYC/4KXn6Hjj1e7jPBEtb
+hQQOlLXoKH8ShYn6WUqE2jeQpY1iSGvUdcg+oX+gRKpBed23BE/TRf53VebFWgcs
+YousZkTZtQ+9m0FrgRKQDMDhRpkrW7IK+WfEVIulZIPEvyZEr9ibWi+PKj8KPRyq
+0Kbr/e/mxILHtd6bysMZ5rwZMLk0GzF7LvQycYW33ev24gNjEyw8frXLMS1tET6S
+OGd20vtTQBn3sr+s6Gg6eLsM8Ke39o9BnOYbkYNHFrcH4eKRFNS4AwDgh2NEd2qs
+bQIDAQAB
+-----END PUBLIC KEY-----"""
+
+private_key_obj = serialization.load_pem_private_key(priv.encode('utf-8'), password=None)
+pub_from_priv = private_key_obj.public_key().public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo
+).decode('utf-8')
+
+print("Do they match?", pub.strip() == pub_from_priv.strip())

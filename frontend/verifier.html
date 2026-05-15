@@ -93,7 +93,7 @@
 
         <div id="verifyStatusBox" style="margin-bottom:16px;"></div>
 
-        <div class="info-row"><span class="info-label">Địa chỉ ví</span><span class="info-value" id="resultAddress">—</span></div>
+        <div class="info-row"><span class="info-label">Địa chỉ tài khoản</span><span class="info-value" id="resultAddress">—</span></div>
         <div class="info-row"><span class="info-label">DID</span><span class="info-value" id="resultDid">—</span></div>
         <div class="info-row"><span class="info-label">IPFS CID</span><span class="info-value" id="resultCid">—</span></div>
         <div class="info-row"><span class="info-label">Xác minh bởi</span><span class="info-value" id="resultVerifiedBy">—</span></div>
@@ -121,7 +121,7 @@
           <div class="card-subtitle">Xác nhận địa chỉ có Soulbound NFT hợp lệ hay không</div>
         </div>
       </div>
-      <label>Địa chỉ ví cần kiểm tra</label>
+      <label>Địa chỉ tài khoản cần kiểm tra</label>
       <input type="text" id="nftCheckAddress" placeholder="0x..." />
       <button id="btnCheckAccess" onclick="checkNFTAccess()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -143,7 +143,7 @@
       </div>
       <label>DID của chủ sở hữu</label>
       <input type="text" id="ownerDid" placeholder="did:ssi:0x..." />
-      <label>Địa chỉ ví của bạn (Verifier)</label>
+      <label>Địa chỉ tài khoản của bạn (Verifier)</label>
       <input type="text" id="requesterAddress" placeholder="0x..." />
       <label>Loại dữ liệu muốn xem</label>
       <select id="dataType">
@@ -173,7 +173,7 @@
       <input type="text" id="retrieveCid" placeholder="Qm..." />
       <label>DID của chủ sở hữu</label>
       <input type="text" id="retrieveOwnerDid" placeholder="did:ssi:0x..." />
-      <label>Địa chỉ ví của bạn</label>
+      <label>Địa chỉ tài khoản của bạn</label>
       <input type="text" id="retrieveRequester" placeholder="0x..." />
       <label>Private Key của bạn (để giải mã file)</label>
       <textarea id="retrievePrivateKey" rows="4" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
@@ -202,6 +202,7 @@
       }
     });
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script type="module" src="js/verifier.js"></script>
 </body>
 </html>

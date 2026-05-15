@@ -104,7 +104,7 @@
               <div class="card-subtitle">Sinh Public Key và Private Key cho ví của bạn</div>
             </div>
           </div>
-          <label>Địa chỉ ví Ethereum</label>
+          <label>Địa chỉ tài khoản Ethereum</label>
           <input type="text" id="walletAddress" placeholder="0x..." oninput="updateSidebar()" />
           <div style="background:var(--warning-bg);border:1px solid #fcd34d;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#78350f;margin-top:10px;">
             Private key chỉ hiển thị 1 lần duy nhất. Hãy tải về và bảo quản an toàn. Hệ thống không lưu private key.
@@ -136,7 +136,7 @@
               <div class="card-subtitle">Ký giao dịch bằng MetaMask (mỗi người dùng ví riêng) — server không cần private key ví của bạn</div>
             </div>
           </div>
-          <label>Địa chỉ ví</label>
+          <label>Địa chỉ tài khoản</label>
           <input type="text" id="didWallet" placeholder="0x..." />
           <label>Chuỗi DID</label>
           <input type="text" id="didString" placeholder="did:ssi:0x..." />
@@ -159,7 +159,7 @@
               <div class="card-subtitle">Xem trạng thái và chi tiết DID của bất kỳ địa chỉ nào</div>
             </div>
           </div>
-          <label>Địa chỉ ví cần tra cứu</label>
+          <label>Địa chỉ tài khoản cần tra cứu</label>
           <input type="text" id="checkAddress" placeholder="0x..." />
           <button id="btnLoadDID" onclick="loadDIDInfo()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -186,7 +186,7 @@
               <div class="card-subtitle">Xem các NFT định danh gắn với ví của bạn</div>
             </div>
           </div>
-          <label>Địa chỉ ví</label>
+          <label>Địa chỉ tài khoản</label>
           <input type="text" id="nftAddress" placeholder="0x..." />
           <button id="btnCheckNFT" onclick="checkNFT()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>

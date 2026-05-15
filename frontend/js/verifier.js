@@ -3,18 +3,33 @@
  * Quy trình: Xác minh DID → Kiểm tra NFT → Xin consent → Tải file
  */
 import { apiFetch, apiRetrieve, showToast, setLoading, store, formatTs } from "./api.js";
+import { requireRole } from "./auth-guard.js";
 
 const BLOCK_EXPLORER = "https://sepolia.etherscan.io/tx/";
 let _lastVerifiedAddress = "";
+let _verifierAccount = ""; // địa chỉ đã xác thực qua auth-guard
 
-// ── Auto-fill từ localStorage ─────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
-    const saved = store.get("walletAddress");
-    if (saved) {
-        const el = document.getElementById("requesterAddress");
-        if (el) el.value = saved;
-        const el2 = document.getElementById("retrieveRequester");
-        if (el2) el2.value = saved;
+// ── Auth Guard + Auto-fill từ MetaMask ───────────────────────
+window.addEventListener("DOMContentLoaded", async () => {
+    // Yêu cầu quyền verifier — nếu không đủ quyền sẽ redirect về login
+    try {
+        _verifierAccount = await requireRole("verifier");
+    } catch {
+        return; // requireRole đã xử lý
+    }
+
+    // Điền địa chỉ verifier từ MetaMask vào các ô input
+    const el = document.getElementById("requesterAddress");
+    if (el) {
+        el.value = _verifierAccount;
+        el.readOnly = true;
+        el.title = "Địa chỉ được lấy từ MetaMask đang kết nối";
+    }
+    const el2 = document.getElementById("retrieveRequester");
+    if (el2) {
+        el2.value = _verifierAccount;
+        el2.readOnly = true;
+        el2.title = "Địa chỉ được lấy từ MetaMask đang kết nối";
     }
 });
 
@@ -176,10 +191,37 @@ export async function retrieveFile() {
     setLoading("btnRetrieve", true);
     const resultEl = document.getElementById("retrieveResult");
     resultEl.className = "status-box pending";
-    resultEl.textContent = "Đang tải file từ IPFS và giải mã...";
+    resultEl.textContent = "Đang kiểm tra CID...";
     resultEl.classList.remove("hidden");
 
     try {
+        // Thử kiểm tra xem đây có phải là Metadata JSON không (không bị mã hóa)
+        try {
+            const metaRes = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
+            if (metaRes.ok) {
+                const contentType = metaRes.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const metaJson = await metaRes.json();
+                    if (metaJson.portraitCID || metaJson.documentCID) {
+                        resultEl.className = "status-box info";
+                        resultEl.innerHTML = `
+                            <strong>Đây là Metadata JSON.</strong> Hãy copy các CID bên dưới để tải file thực tế:<br><br>
+                            - <strong>Ảnh chân dung CID:</strong> <code>${metaJson.portraitCID || "Không có"}</code><br>
+                            - <strong>Tài liệu PDF CID:</strong> <code>${metaJson.documentCID || "Không có"}</code><br>
+                            - Loại giấy tờ: ${metaJson.documentType || "Không rõ"}<br>
+                            - Cơ quan cấp: ${metaJson.issuedBy || "Không rõ"}<br><br>
+                            <em>(Hãy copy CID của file bạn muốn xem, dán lên ô "IPFS CID của file" ở trên và nhấn nút Tải lại)</em>
+                        `;
+                        setLoading("btnRetrieve", false);
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.log("Not a plain JSON metadata, proceeding to decrypt...", e);
+        }
+
+        resultEl.textContent = "Đang tải file từ IPFS và giải mã...";
         const blob = await apiRetrieve("/api/retrieve/" + cid, {
             private_key: privateKey,
             owner_did: ownerDid,
@@ -208,8 +250,8 @@ export async function retrieveFile() {
         resultEl.className = "status-box error";
         if (e.message.includes("consent")) {
             resultEl.textContent = "Không có quyền truy cập: " + e.message;
-        } else if (e.message.includes("Authentication")) {
-            resultEl.textContent = "Private key không khớp. Kiểm tra lại private key.";
+        } else if (e.message.includes("Authentication") || e.message.includes("deserialize")) {
+            resultEl.textContent = "Private key không khớp hoặc file không được mã hóa đúng định dạng. Hãy đảm bảo bạn đang tải file thực tế (chứ không phải metadata) và dùng đúng Private Key.";
         } else {
             resultEl.textContent = "Lỗi: " + e.message;
         }

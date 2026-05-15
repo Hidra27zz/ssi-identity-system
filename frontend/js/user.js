@@ -2,6 +2,9 @@
  * Logic cho trang Identity User.
  */
 import { apiFetch, apiPost, showToast, setLoading, store, formatTs } from "./api.js";
+import { requireRole } from "./auth-guard.js";
+
+let _userAccount = "";
 
 async function ensureMetaMaskChain(targetChainId) {
     if (!window.ethereum) throw new Error("Chưa cài MetaMask.");
@@ -31,13 +34,24 @@ async function ensureMetaMaskChain(targetChainId) {
 }
 
 // ── Auto-fill từ localStorage ─────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
-    const saved = store.get("walletAddress");
-    if (saved) {
-        const fields = ["walletAddress","didWallet","checkAddress","nftAddress"];
-        fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = saved; });
-        updateSidebar(saved);
+window.addEventListener("DOMContentLoaded", async () => {
+    try {
+        _userAccount = await requireRole("user");
+    } catch {
+        return;
     }
+
+    const fields = ["walletAddress","didWallet","checkAddress","nftAddress"];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = _userAccount;
+            el.readOnly = true;
+            el.title = "Tài khoản từ MetaMask";
+        }
+    });
+    updateSidebar(_userAccount);
+
     const savedDid = store.get("did");
     if (savedDid) {
         const el = document.getElementById("didString");
@@ -140,7 +154,7 @@ export async function createDID() {
         const mmAddr = (await signer.getAddress()).toLowerCase();
         if (mmAddr !== wallet.toLowerCase()) {
             throw new Error(
-                "MetaMask đang chọn ví khác với ô Địa chỉ ví. Hãy chọn đúng tài khoản có địa chỉ " + wallet
+                "MetaMask đang chọn tài khoản khác với ô Địa chỉ tài khoản. Hãy chọn đúng tài khoản có địa chỉ " + wallet
             );
         }
 

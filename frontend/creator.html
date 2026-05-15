@@ -135,11 +135,11 @@
             <div class="card-subtitle">Nhập địa chỉ ví và lấy public key để mã hóa tài liệu</div>
           </div>
         </div>
-        <label>Địa chỉ ví của người dùng</label>
+        <label>Địa chỉ tài khoản của người dùng</label>
         <input type="text" id="userAddress" placeholder="0x..." oninput="onUserAddressChange()" />
         <label>DID của người dùng</label>
         <input type="text" id="userDid" placeholder="did:ssi:0x..." />
-        <label>Địa chỉ ví Creator (của bạn)</label>
+        <label>Địa chỉ tài khoản Creator (của bạn)</label>
         <input type="text" id="creatorAddress" placeholder="0x..." />
         <button id="btnFetchPubKey" onclick="fetchPublicKey()" style="margin-top:14px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -237,7 +237,7 @@
       </div>
     </div>
 
-    <!-- BƯỚC 4: Gửi hash -->
+    <!-- BƯỚC 4: Gửi hash + Mint NFT -->
     <div class="step-panel" id="panel4">
       <div class="card">
         <div class="card-header">
@@ -274,6 +274,54 @@
         </div>
       </div>
       <div id="txStatus" class="status-box hidden"></div>
+
+      <!-- Phần Mint NFT — hiện ra sau khi storeHash thành công -->
+      <div id="mintNftSection" class="card hidden" style="margin-top:16px;border-top:3px solid #f59e0b;">
+        <div class="card-header">
+          <div class="card-icon" style="background:linear-gradient(135deg,#f59e0b22,#f59e0b11);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <div class="card-title" style="color:#92400e;">Mint Soulbound NFT</div>
+            <div class="card-subtitle">Cấp phát NFT định danh không thể chuyển nhượng vào ví người dùng</div>
+          </div>
+        </div>
+
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:.85rem;color:#92400e;">
+          ⚠️ Soulbound Token là NFT <strong>không thể chuyển nhượng</strong> — gắn vĩnh viễn với địa chỉ của người dùng, đại diện cho chứng chỉ được xác minh.
+        </div>
+
+        <div class="info-row" style="margin-bottom:12px;">
+          <span class="info-label">Recipient</span>
+          <span class="info-value" id="mintRecipient" style="font-family:monospace;">—</span>
+        </div>
+
+        <label>Loại chứng chỉ</label>
+        <select id="mintCredentialType">
+          <option value="CCCD">🏦 Căn cước công dân (CCCD)</option>
+          <option value="HoChieu">✈️ Hộ chiếu</option>
+          <option value="BangLaiXe">🚗 Bằng lái xe</option>
+          <option value="BangTotNghiep">🎓 Bằng tốt nghiệp</option>
+          <option value="BaoHiemXaHoi">💚 Bảo hiểm xã hội</option>
+          <option value="Identity">🔑 Định danh (Identity)</option>
+        </select>
+
+        <label style="margin-top:10px;">Metadata URI (IPFS CID — tự động điền)</label>
+        <input type="text" id="mintMetadataUri" placeholder="ipfs://Qm..." readonly
+               style="font-family:monospace;font-size:.82rem;" />
+
+        <button onclick="mintNFT()" id="btnMintNFT" style="margin-top:16px;
+            background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+            border:none;padding:13px 24px;border-radius:var(--radius-sm);
+            font-weight:600;font-size:.95rem;cursor:pointer;width:100%;
+            display:flex;align-items:center;justify-content:center;gap:8px;
+            transition:opacity .2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Mint Soulbound NFT cho người dùng
+        </button>
+
+        <div id="mintStatus" class="status-box hidden" style="margin-top:14px;"></div>
+      </div>
     </div>
 
     <!-- BƯỚC 5: Hoàn thành -->
@@ -282,8 +330,14 @@
         <div style="width:72px;height:72px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <h2 style="font-size:1.3rem;color:var(--success);margin-bottom:10px;">Hoàn thành xác minh!</h2>
-        <p class="text-muted" style="margin-bottom:24px;">Dữ liệu đã được lưu lên blockchain thành công. Soulbound NFT sẽ được mint tự động bởi Orchestrator.</p>
+        <h2 style="font-size:1.3rem;color:var(--success);margin-bottom:10px;">✅ Hoàn thành xác minh &amp; Mint NFT!</h2>
+        <p class="text-muted" style="margin-bottom:16px;">Dữ liệu đã được lưu lên blockchain và Soulbound NFT đã được cấp phát.</p>
+        <div id="completionSummary" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px;margin-bottom:24px;text-align:left;font-size:.88rem;">
+          <div class="info-row"><span class="info-label">TX Blockchain</span><span class="info-value" id="completeTxHash" style="font-family:monospace;font-size:.8rem;">—</span></div>
+          <div class="info-row"><span class="info-label">TX Mint NFT</span><span class="info-value" id="completeMintTx" style="font-family:monospace;font-size:.8rem;">—</span></div>
+          <div class="info-row"><span class="info-label">Loại NFT</span><span class="info-value" id="completeNftType">—</span></div>
+          <div class="info-row"><span class="info-label">Recipient</span><span class="info-value" id="completeRecipient" style="font-family:monospace;font-size:.8rem;">—</span></div>
+        </div>
         <button onclick="resetCreator()" class="btn-secondary">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
           Xử lý người dùng tiếp theo
@@ -291,6 +345,27 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- BƯỚC 6 (Bổ sung): Quản lý & Thu hồi DID -->
+  <div class="container" style="margin-top:24px;">
+    <div class="card" style="border-top:3px solid var(--danger);">
+      <div class="card-header">
+        <div class="card-icon" style="background:linear-gradient(135deg,#ef444422,#ef444411);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        </div>
+        <div>
+          <div class="card-title" style="color:var(--danger);">Thu hồi định danh (Revoke)</div>
+          <div class="card-subtitle">Hủy bỏ hiệu lực của DID và toàn bộ Soulbound NFT liên quan</div>
+        </div>
+      </div>
+      <label>Địa chỉ tài khoản cần thu hồi</label>
+      <input type="text" id="revokeAddress" placeholder="0x..." />
+      <button onclick="revokeDID()" id="btnRevokeDID" style="margin-top:12px;background:var(--danger);color:#fff;border:none;padding:12px 24px;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;">
+        Thu hồi vĩnh viễn
+      </button>
+      <div id="revokeStatus" class="status-box hidden" style="margin-top:14px;"></div>
+    </div>
   </div>
 
   <script>
@@ -326,8 +401,24 @@
         const el = document.getElementById(id);
         if (el) el.textContent = '';
       });
-      const status = document.getElementById('txStatus');
-      if (status) { status.className = 'status-box hidden'; status.innerHTML = ''; }
+      // Reset status boxes
+      ['txStatus','mintStatus'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.className = 'status-box hidden'; el.innerHTML = ''; }
+      });
+      // Ẩn mint section
+      const mintSection = document.getElementById('mintNftSection');
+      if (mintSection) mintSection.classList.add('hidden');
+      // Reset mint fields
+      const mintUri = document.getElementById('mintMetadataUri');
+      if (mintUri) mintUri.value = '';
+      const mintRecipient = document.getElementById('mintRecipient');
+      if (mintRecipient) mintRecipient.textContent = '—';
+      // Reset completion summary
+      ['completeTxHash','completeMintTx','completeNftType','completeRecipient'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+      });
       const pubStatus = document.getElementById('pubKeyStatus');
       if (pubStatus) pubStatus.classList.add('hidden');
       const preview = document.getElementById('portraitPreviewWrap');
@@ -345,17 +436,11 @@
       reader.readAsDataURL(file);
     }
 
-    const _obs = new MutationObserver(() => {
-      const box = document.getElementById('txStatus');
-      if (box && box.classList.contains('success')) {
-        setTimeout(() => goToStep(5), 1500);
-      }
-    });
     document.addEventListener('DOMContentLoaded', () => {
-      const box = document.getElementById('txStatus');
-      if (box) _obs.observe(box, { attributes: true, attributeFilter: ['class'] });
+      // creatorAddress readonly - giá trị được set bởi auth-guard trong creator.js
     });
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script type="module" src="js/creator.js"></script>
 </body>
 </html>

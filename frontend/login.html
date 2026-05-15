@@ -5,66 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập Hệ thống SSI</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #6a85f1, #8fd3f4); padding: 16px; }
-        .card { background: #fff; padding: 40px; border-radius: 12px; width: 100%; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
-        .card h2 { margin-bottom: 20px; color: #333; }
-        .button { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; background: #f6851b; color: #fff; font-weight: bold; transition: background 0.3s; }
-        .button:hover { background: #e27618; }
-        .button:disabled { background: #a0aec0; cursor: not-allowed; }
-        .button-secondary { margin-top: 10px; background: #3498db; }
-        .button-secondary:hover { background: #2980b9; }
-        .button-success { margin-top: 10px; background: #2ecc71; }
-        .button-success:hover { background: #27ae60; }
-        .button-outline { margin-top: 10px; background: #ecf0f1; color: #2c3e50; }
-        .button-outline:hover { background: #dfe6e9; }
-        .actions { display: none; margin-top: 16px; flex-direction: column; gap: 8px; }
-        .info { margin-top: 20px; text-align: left; font-size: 14px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; display: none; word-break: break-all; }
-        .info p { margin-bottom: 8px; color: #495057; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            padding: 20px; 
+            color: #333;
+        }
+        .card { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 40px; 
+            border-radius: 16px; 
+            width: 100%; 
+            max-width: 480px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); 
+            backdrop-filter: blur(10px);
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { color: #1a202c; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .header p { color: #4a5568; font-size: 14px; line-height: 1.5; }
+        
+        .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; }
+        .tab { 
+            flex: 1; 
+            text-align: center; 
+            padding: 12px 0; 
+            cursor: pointer; 
+            font-weight: 600; 
+            color: #718096; 
+            transition: all 0.3s; 
+            border-bottom: 2px solid transparent; 
+            margin-bottom: -2px; 
+        }
+        .tab.active { color: #3182ce; border-bottom-color: #3182ce; }
+        .tab:hover:not(.active) { color: #4a5568; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .form-group { margin-bottom: 16px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #2d3748; }
+        .form-group input { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 1px solid #cbd5e0; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            transition: border-color 0.2s, box-shadow 0.2s; 
+        }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: #3182ce; 
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2); 
+        }
+
+        .button { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.3s; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-metamask { background: #f6851b; color: #fff; }
+        .btn-metamask:hover { background: #e27618; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(246, 133, 27, 0.3); }
+        .btn-primary { background: #3182ce; color: #fff; }
+        .btn-primary:hover { background: #2b6cb0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3); }
+        .button:disabled { background: #a0aec0; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .actions { display: none; margin-top: 24px; flex-direction: column; gap: 12px; }
+        .btn-creator { background: #38a169; color: #fff; }
+        .btn-creator:hover { background: #2f855a; }
+        .btn-verifier { background: #edf2f7; color: #2d3748; border: 1px solid #cbd5e0; }
+        .btn-verifier:hover { background: #e2e8f0; }
+        .btn-user { background: #4299e1; color: #fff; }
+        .btn-user:hover { background: #3182ce; }
+
+        .info { 
+            margin-top: 24px; 
+            text-align: left; 
+            font-size: 13px; 
+            background: #f7fafc; 
+            padding: 16px; 
+            border-radius: 8px; 
+            border: 1px solid #e2e8f0; 
+            display: none; 
+            word-break: break-all; 
+        }
+        .info p { margin-bottom: 8px; color: #4a5568; }
         .info p:last-child { margin-bottom: 0; }
-        .info b { color: #212529; }
-        .message { margin-top: 15px; font-size: 14px; font-weight: 500; min-height: 1.2em; }
+        .info b { color: #1a202c; font-weight: 600; }
+        .message { margin-top: 16px; font-size: 14px; font-weight: 500; min-height: 20px; text-align: center; }
+
+        .auth-switch { text-align: center; margin-top: 16px; font-size: 14px; color: #4a5568; }
+        .auth-switch a { color: #3182ce; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .auth-switch a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>Đăng nhập SSI</h2>
-        <p style="font-size:13px;color:#666;margin-bottom:16px;text-align:left;">
-            Bước 1: Kết nối MetaMask. Hệ thống đọc quyền <b>Creator</b> trực tiếp từ smart contract.
-            Vai trò <b>User</b> và <b>Verifier</b> không có trên chuỗi — bạn tự chọn giao diện phù hợp.
-        </p>
+        <div class="header">
+            <h2>Đăng nhập SSI</h2>
+            <p>Hệ thống Định danh Phi tập trung (SSI) trên Ethereum</p>
+        </div>
 
-        <button id="loginBtn" class="button" type="button">
-            🦊 Kết nối ví MetaMask
-        </button>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('metamask')">MetaMask</div>
+            <div class="tab" onclick="switchTab('password')">Tài khoản & Mật khẩu</div>
+        </div>
+
+        <!-- Tab MetaMask -->
+        <div id="tab-metamask" class="tab-content active">
+            <p style="font-size:13.5px;color:#4a5568;margin-bottom:20px;text-align:center;">
+                Kết nối ví MetaMask để xác thực danh tính. Hệ thống sẽ tự động nhận diện quyền hạn của bạn trên Blockchain.
+            </p>
+            <button id="loginBtn" class="button btn-metamask" type="button">
+                Kết nối ví MetaMask
+            </button>
+        </div>
+
+        <!-- Tab Mật khẩu -->
+        <div id="tab-password" class="tab-content">
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Địa chỉ tài khoản (Ví)</label>
+                    <input type="text" id="pwdAddress" placeholder="0x..." />
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="pwdPassword" placeholder="Nhập mật khẩu" />
+                </div>
+                <button id="pwdLoginBtn" class="button btn-primary" type="button" onclick="loginWithPassword()">
+                    Đăng nhập
+                </button>
+                <div class="auth-switch">
+                    Chưa có mật khẩu? <a onclick="toggleRegisterForm()">Đăng ký ngay</a>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <p style="font-size:13px;color:#4a5568;margin-bottom:16px;">
+                    Đăng ký mật khẩu cho địa chỉ ví đã tạo DID của bạn.
+                </p>
+                <div class="form-group">
+                    <label>Địa chỉ tài khoản (Ví)</label>
+                    <input type="text" id="regAddress" placeholder="0x..." />
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" id="regPassword" placeholder="Ít nhất 6 ký tự" />
+                </div>
+                <button id="regBtn" class="button btn-primary" type="button" onclick="registerPassword()">
+                    Đăng ký & Đăng nhập
+                </button>
+                <div class="auth-switch">
+                    Đã có mật khẩu? <a onclick="toggleRegisterForm()">Đăng nhập</a>
+                </div>
+            </div>
+        </div>
 
         <div id="infoBox" class="info">
-            <p><b>Địa chỉ ví:</b> <br><span id="addressDisplay"></span></p>
-            <p><b>Mạng (CHAIN_ID):</b> <span id="chainDisplay"></span></p>
-            <p><b>Creator trên contract:</b> <span id="creatorDisplay">—</span></p>
+            <p><b>Địa chỉ:</b> <br><span id="addressDisplay"></span></p>
+            <p><b>Phương thức:</b> <span id="methodDisplay"></span></p>
+            <p><b>Quyền Creator:</b> <span id="creatorDisplay">—</span></p>
         </div>
 
         <p id="messageDisplay" class="message"></p>
 
         <div id="actions" class="actions">
-            <button id="btnCreator" type="button" class="button button-success" style="display:none;">Vào Creator Dashboard</button>
-            <button id="btnUser" type="button" class="button button-secondary">Vào User Dashboard</button>
-            <button id="btnVerifier" type="button" class="button button-outline">Vào Verifier Dashboard</button>
+            <button id="btnCreator" type="button" class="button btn-creator" style="display:none;">Vào Creator Dashboard</button>
+            <button id="btnVerifier" type="button" class="button btn-verifier">Vào Verifier Dashboard</button>
+            <button id="btnUser" type="button" class="button btn-user">Vào User Dashboard</button>
         </div>
     </div>
 
     <script type="module">
         const ZERO = "0x0000000000000000000000000000000000000000";
 
-        /** Minimal ABI — khớp DID_Registry.vy */
         const DID_REGISTRY_ABI = [
             "function isCreator(address addr) view returns (bool)",
         ];
 
         let currentAddress = "";
         let isCreatorOnChain = false;
+        let authMethod = "";
+
+        // UI Helpers
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'metamask') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('tab-metamask').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('tab-password').classList.add('active');
+            }
+        };
+
+        window.toggleRegisterForm = function() {
+            const loginF = document.getElementById('loginForm');
+            const regF = document.getElementById('registerForm');
+            if (loginF.style.display === 'none') {
+                loginF.style.display = 'block';
+                regF.style.display = 'none';
+            } else {
+                loginF.style.display = 'none';
+                regF.style.display = 'block';
+            }
+            setMessage("");
+        };
 
         function setMessage(text, color) {
             const el = document.getElementById("messageDisplay");
@@ -111,37 +276,73 @@
             }
         }
 
-        function rememberWallet(addr) {
+        function saveSession(addr, role, token = "") {
             try {
                 localStorage.setItem("ssi_walletAddress", addr);
+                sessionStorage.setItem("ssi_connectedAccount", addr);
+                sessionStorage.setItem("ssi_role", role);
+                if (token) {
+                    localStorage.setItem("ssi_sessionToken", token);
+                } else {
+                    localStorage.removeItem("ssi_sessionToken");
+                }
             } catch (_) {}
         }
 
-        async function runConnect() {
+        async function checkCreatorRoleViaRPC(address) {
+            try {
+                const { DID_REGISTRY_ADDRESS, CHAIN_ID } = await loadConstants();
+                const rpcUrl = CHAIN_ID === 31337 ? "http://127.0.0.1:8545" : "https://ethereum-sepolia-rpc.publicnode.com";
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const registry = new ethers.Contract(DID_REGISTRY_ADDRESS, DID_REGISTRY_ABI, provider);
+                return await registry.isCreator(address);
+            } catch (e) {
+                console.error("Lỗi check role RPC:", e);
+                return false;
+            }
+        }
+
+        function showSuccessUI() {
+            document.getElementById("addressDisplay").innerText = currentAddress;
+            document.getElementById("methodDisplay").innerText = authMethod;
+            document.getElementById("creatorDisplay").innerText = isCreatorOnChain ? "Có (Identity Creator)" : "Không";
+            document.getElementById("infoBox").style.display = "block";
+
+            document.getElementById("btnCreator").style.display = isCreatorOnChain ? "block" : "none";
+            document.getElementById("actions").style.display = "flex";
+            
+            // Hide tabs
+            document.querySelector('.tabs').style.display = 'none';
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            
+            setMessage("Đăng nhập thành công!", "#38a169");
+        }
+
+        // --- MetaMask Flow ---
+        async function runMetaMaskConnect() {
             const loginBtn = document.getElementById("loginBtn");
-            const infoBox = document.getElementById("infoBox");
-            const actions = document.getElementById("actions");
 
             if (!window.ethereum) {
-                setMessage("Vui lòng cài MetaMask.", "red");
+                setMessage("Vui lòng cài MetaMask.", "#e53e3e");
                 return;
             }
 
             const { DID_REGISTRY_ADDRESS, CHAIN_ID } = await loadConstants();
 
             if (!DID_REGISTRY_ADDRESS || DID_REGISTRY_ADDRESS === ZERO) {
-                setMessage("Chưa cấu hình DID_REGISTRY trong shared/constants.js (deploy contract trước).", "red");
+                setMessage("Chưa cấu hình DID_REGISTRY.", "#e53e3e");
                 return;
             }
 
             loginBtn.disabled = true;
             loginBtn.innerText = "Đang kết nối...";
-            setMessage("Vui lòng xác nhận trên MetaMask...", "#333");
+            setMessage("Vui lòng xác nhận trên MetaMask...", "#3182ce");
 
             const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
             currentAddress = accounts[0];
+            authMethod = "MetaMask";
 
-            setMessage("Đang chuyển / kiểm tra mạng...", "#333");
+            setMessage("Đang kiểm tra mạng...", "#3182ce");
             await ensureMetaMaskChain(CHAIN_ID);
 
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -149,51 +350,156 @@
             const connectedChain = Number(net.chainId);
 
             if (connectedChain !== CHAIN_ID) {
-                throw new Error("Sai mạng: MetaMask đang ở chainId " + connectedChain + ", cần " + CHAIN_ID + ". Hãy chuyển mạng thủ công trong MetaMask.");
+                throw new Error("Sai mạng: MetaMask đang ở chainId " + connectedChain + ", cần " + CHAIN_ID);
             }
 
+            setMessage("Đang kiểm tra quyền trên smart contract...", "#3182ce");
             const registry = new ethers.Contract(DID_REGISTRY_ADDRESS, DID_REGISTRY_ABI, provider);
-            isCreatorOnChain = await registry.isCreator(currentAddress);
+            isCreatorOnChain = await registry.isCreator(currentAddress).catch(() => false);
 
-            document.getElementById("addressDisplay").innerText = currentAddress;
-            document.getElementById("chainDisplay").innerText = String(CHAIN_ID) + (connectedChain === CHAIN_ID ? " ✓" : "");
-            document.getElementById("creatorDisplay").innerText = isCreatorOnChain ? "Có (Identity Creator)" : "Không";
-            infoBox.style.display = "block";
-
-            rememberWallet(currentAddress);
-
-            const btnCreator = document.getElementById("btnCreator");
-            btnCreator.style.display = isCreatorOnChain ? "block" : "none";
-
-            actions.style.display = "flex";
-
-            setMessage("Kết nối thành công. Chọn giao diện bên dưới.", "green");
-            loginBtn.innerText = "Đã kết nối ví";
-            loginBtn.style.background = "#28a745";
+            const role = isCreatorOnChain ? "creator" : "user";
+            saveSession(currentAddress, role); // No token for metamask
+            showSuccessUI();
         }
 
         document.getElementById("loginBtn").addEventListener("click", async () => {
             const loginBtn = document.getElementById("loginBtn");
             try {
-                await runConnect();
+                await runMetaMaskConnect();
             } catch (err) {
                 console.error(err);
-                setMessage("Lỗi: " + (err?.message || err?.reason || "Không thể kết nối."), "red");
-                loginBtn.innerText = "🦊 Kết nối ví MetaMask";
+                setMessage("Lỗi: " + (err?.message || err?.reason || "Không thể kết nối."), "#e53e3e");
+                loginBtn.innerText = "Kết nối ví MetaMask";
                 loginBtn.disabled = false;
-                loginBtn.style.background = "";
             }
         });
 
+        // --- Password Flow ---
+        window.loginWithPassword = async function() {
+            const addr = document.getElementById("pwdAddress").value.trim();
+            const pwd = document.getElementById("pwdPassword").value;
+            const btn = document.getElementById("pwdLoginBtn");
+
+            if (!addr || !pwd) {
+                setMessage("Vui lòng nhập đủ địa chỉ và mật khẩu", "#e53e3e");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Đang đăng nhập...";
+            setMessage("", "");
+
+            try {
+                const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ wallet_address: addr, password: pwd })
+                });
+                
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Đăng nhập thất bại");
+
+                currentAddress = data.wallet_address;
+                authMethod = "Mật khẩu";
+                
+                setMessage("Đang kiểm tra quyền...", "#3182ce");
+                isCreatorOnChain = await checkCreatorRoleViaRPC(currentAddress);
+
+                const role = isCreatorOnChain ? "creator" : "user";
+                saveSession(currentAddress, role, data.session_token);
+                showSuccessUI();
+
+            } catch (e) {
+                setMessage(e.message, "#e53e3e");
+                btn.disabled = false;
+                btn.innerText = "Đăng nhập";
+            }
+        };
+
+        window.registerPassword = async function() {
+            const addr = document.getElementById("regAddress").value.trim();
+            const pwd = document.getElementById("regPassword").value;
+            const btn = document.getElementById("regBtn");
+
+            if (!addr || !pwd) {
+                setMessage("Vui lòng nhập đủ địa chỉ và mật khẩu", "#e53e3e");
+                return;
+            }
+            if (pwd.length < 6) {
+                setMessage("Mật khẩu phải từ 6 ký tự", "#e53e3e");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Đang đăng ký...";
+            setMessage("", "");
+
+            try {
+                const res = await fetch("/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ wallet_address: addr, password: pwd })
+                });
+                
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Đăng ký thất bại");
+
+                currentAddress = data.wallet_address;
+                authMethod = "Mật khẩu";
+                
+                setMessage("Đang kiểm tra quyền...", "#3182ce");
+                isCreatorOnChain = await checkCreatorRoleViaRPC(currentAddress);
+
+                const role = isCreatorOnChain ? "creator" : "user";
+                saveSession(currentAddress, role, data.session_token);
+                showSuccessUI();
+
+            } catch (e) {
+                setMessage(e.message, "#e53e3e");
+                btn.disabled = false;
+                btn.innerText = "Đăng ký & Đăng nhập";
+            }
+        };
+
+        // --- Nav Buttons ---
         document.getElementById("btnCreator").addEventListener("click", () => {
+            sessionStorage.setItem("ssi_role", "creator");
             window.location.href = "creator.html";
         });
-        document.getElementById("btnUser").addEventListener("click", () => {
-            window.location.href = "user.html";
-        });
         document.getElementById("btnVerifier").addEventListener("click", () => {
+            sessionStorage.setItem("ssi_role", "verifier");
             window.location.href = "verifier.html";
         });
+        document.getElementById("btnUser").addEventListener("click", () => {
+            sessionStorage.setItem("ssi_role", "user");
+            window.location.href = "user.html";
+        });
+
+        // Lắng nghe khi user đổi account trong MetaMask
+        if (window.ethereum) {
+            window.ethereum.on("accountsChanged", (accounts) => {
+                if (authMethod === "MetaMask") {
+                    if (accounts.length === 0) {
+                        sessionStorage.removeItem("ssi_connectedAccount");
+                        sessionStorage.removeItem("ssi_role");
+                        setMessage("Ví đã bị ngắt kết nối. Vui lòng kết nối lại.", "#e53e3e");
+                    } else {
+                        sessionStorage.removeItem("ssi_connectedAccount");
+                        sessionStorage.removeItem("ssi_role");
+                        setMessage("Tài khoản MetaMask thay đổi. Vui lòng kết nối lại.", "#dd6b20");
+                        document.getElementById("actions").style.display = "none";
+                        document.getElementById("infoBox").style.display = "none";
+                        const btn = document.getElementById("loginBtn");
+                        btn.innerText = "Kết nối ví MetaMask";
+                        btn.disabled = false;
+                        
+                        document.querySelector('.tabs').style.display = 'flex';
+                        document.getElementById('tab-metamask').style.display = 'block';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
+
